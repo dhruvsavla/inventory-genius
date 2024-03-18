@@ -55,7 +55,7 @@ public class Return {
         @Column(name = "sentForTicketOn")
         private String sentForTicketOn;
     
-        @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+        @OneToOne(mappedBy = "order")
         private Item item;
     
     

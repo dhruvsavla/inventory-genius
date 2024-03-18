@@ -48,8 +48,8 @@ function Return() {
     return (
       supplier.date.toString().toLowerCase().includes(searchTermDate.toLowerCase()) && // Convert to string
       supplier.skucode.toString().toLowerCase().includes(searchTermSkuCode.toLowerCase()) &&
-      supplier.portal.toString().toLowerCase().includes(searchTermPortal.toLowerCase()) &&
-      supplier.orderNo.toString().toLowerCase().includes(searchTermOrderNo.toLowerCase()) &&
+      supplier.portal?.toString().toLowerCase().includes(searchTermPortal.toLowerCase()) &&
+      supplier.orderNo?.toString().toLowerCase().includes(searchTermOrderNo.toLowerCase()) &&
       supplier.trackingNumber.toString().toLowerCase().includes(searchTermTrackingNumber.toLowerCase()) && // Convert to string
       supplier.returnCode.toString().toLowerCase().includes(searchTermReturnCode.toLowerCase()) &&
       supplier.okStock.toString().toLowerCase().includes(searchTermOkStock.toLowerCase()) &&
@@ -124,6 +124,7 @@ const handleSubmit = (event) => {
               setDate("");
               setOrderno("");
               setPortal("");
+              setSkucode("");
               setReturnCode("");
               setTrackingNumber("");
               setOkStock("");
@@ -151,7 +152,7 @@ const handleRowSubmit = () => {
   console.log(selectedItem)
   if (rowSelected && selectedItem) {
     const formData = {
-      date,
+            date,
             skucode,
             portal,
             orderNo,
@@ -162,8 +163,8 @@ const handleRowSubmit = () => {
             sentForTicketOn,
     };
     console.log('form data: ', formData)
-    console.log("id: ", selectedItem.stockId)
-    axios.put(`http://localhost:8080/stock/${selectedItem.stockId}`, formData)
+    console.log("id: ", selectedItem.returnId)
+    axios.put(`http://localhost:8080/return/${selectedItem.returnId}`, formData)
       .then(response => {
         
         console.log('PUT request successful:', response);
@@ -172,6 +173,7 @@ const handleRowSubmit = () => {
         setDate("");
         setOrderno("");
         setPortal("");
+        setSkucode("");
         setReturnCode("");
         setTrackingNumber("");
         setOkStock("");
@@ -189,6 +191,7 @@ const handleRowSubmit = () => {
 const handleRowClick = (stock) => {
   setDate(stock.date);
   setOrderno(stock.orderNo);
+  setSkucode(stock.skucode);
   setPortal(stock.portal);
   setReturnCode(stock.returnCode);
   setTrackingNumber(stock.trackingNumber);
@@ -238,7 +241,7 @@ const handleDelete = (id) => {
   .then(response => {
     // Handle success response
     console.log('Row deleted successfully.');
-    setApiData(prevData => prevData.filter(row => row.stockId !== id));
+    setApiData(prevData => prevData.filter(row => row.returnId !== id));
 
   })
   .catch(error => {
@@ -277,34 +280,38 @@ const handleDelete = (id) => {
             required
             type="text"
             placeholder="SKUcode"
-            defaultValue=""
+            name="SKUCode"
+            value={skucode}
+            onChange={(e) => setSkucode(e.target.value)}  
           />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
-        
-      </Row>
-      <Row className="mb-3">
+
         <Form.Group as={Col} md="4" controlId="validationCustom01">
           <Form.Label>Portal</Form.Label>
           <Form.Control
             required
             type="text"
             placeholder="Portal"
-            defaultValue=""
+            name="portal"
+            value={portal}
+            onChange={(e) => setPortal(e.target.value)}  
           />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
-                        </Row>
+        
+      </Row>
+      
                         <Row className="mb-3">
         <Form.Group as={Col} md="4" controlId="validationCustom01">
           <Form.Label>Against Order No</Form.Label>
           <Form.Control
             required
             type="text"
-            placeholder="SKUCode"
-            name="skucode"
-            value={skucode}
-            onChange={(e) => setSkucode(e.target.value)}
+            placeholder="Against Order No"
+            name="Against Order No"
+            value={orderNo}
+            onChange={(e) => setOrderno(e.target.value)}
           />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
@@ -319,9 +326,6 @@ const handleDelete = (id) => {
             onChange={(e) => setReturnCode(e.target.value)}          />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
-        
-      </Row>
-      <Row className="mb-3">
         <Form.Group as={Col} md="4" controlId="validationCustom01">
           <Form.Label>Tracking No</Form.Label>
           <Form.Control
@@ -334,6 +338,10 @@ const handleDelete = (id) => {
           />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
+
+      </Row>
+      <Row className="mb-3">
+        
                     </Row>
                     <Row className="mb-3">
         <Form.Group as={Col} md="4" controlId="validationCustom01">
@@ -360,9 +368,6 @@ const handleDelete = (id) => {
           />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
-        
-      </Row>
-      <Row className="mb-3">
         <Form.Group as={Col} md="4" controlId="validationCustom01">
           <Form.Label>Sent for Ticket On</Form.Label>
           <Form.Control
@@ -375,6 +380,9 @@ const handleDelete = (id) => {
           />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
+      </Row>
+      <Row className="mb-3">
+        
                         </Row>
       
                         <div className='buttons'>

@@ -35,7 +35,7 @@ function Header() {
                 <Nav.Link href="/stock">Stock</Nav.Link>
                 <Nav.Link href="/stockinward">Stock Inward</Nav.Link>
                 <Nav.Link href="/storage">Storage</Nav.Link>
-                <Nav.Link href="/dispatch">Dispatch</Nav.Link>
+                {/* <Nav.Link href="/dispatch">Dispatch</Nav.Link> */}
                 <Nav.Link href="/returns">Returns</Nav.Link>
             </Nav>
             {/* <Form className="d-flex">

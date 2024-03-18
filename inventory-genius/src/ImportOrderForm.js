@@ -357,6 +357,22 @@ const handleDelete = (id) => {
           />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
+
+        <Form.Group as={Col} md="4" controlId="validationCustom01">
+          <Form.Label>Portal</Form.Label>
+          <Form.Select
+          required
+          value={portal} // Set the selected value
+          onChange={(e) => setPortal(e.target.value)} // Handle value change
+        >
+          <option value="">Select Portal </option>
+          {/* Map over portalSKUList and create options */}
+          {portalNameList.map((sku, index) => (
+            <option key={index} value={sku}>{sku}</option>
+          ))}
+        </Form.Select>
+          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+        </Form.Group>
         
       </Row>
 
@@ -494,24 +510,7 @@ const handleDelete = (id) => {
         
     </Row>
                     
-    <Row className="mb-3">
-        <Form.Group as={Col} md="4" controlId="validationCustom01">
-          <Form.Label>Portal</Form.Label>
-          <Form.Select
-          required
-          value={portal} // Set the selected value
-          onChange={(e) => setPortal(e.target.value)} // Handle value change
-        >
-          <option value="">Select Portal </option>
-          {/* Map over portalSKUList and create options */}
-          {portalNameList.map((sku, index) => (
-            <option key={index} value={sku}>{sku}</option>
-          ))}
-        </Form.Select>
-          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-        </Form.Group>
-        
-    </Row>
+    
                     
     <div className='buttons'>
       {rowSelected ? (

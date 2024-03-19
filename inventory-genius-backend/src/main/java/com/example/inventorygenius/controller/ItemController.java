@@ -59,6 +59,7 @@ public class ItemController {
             existingItem.setSellingPrice(updatedItem.getSellingPrice());
             existingItem.setMrp(updatedItem.getMrp());
             existingItem.setSellerSKUCode(updatedItem.getSellerSKUCode());
+            existingItem.setImg(updatedItem.getImg());
 
             // Update supplier information if provided
             if (updatedItem.getSupplier() != null) {

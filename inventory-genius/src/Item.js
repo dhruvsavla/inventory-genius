@@ -34,6 +34,7 @@ function Item() {
   const [sellingPrice, setSellingPrice] = useState("");
   const [mrp, setMRP] = useState("");
   const [sellerSKUCode, setSellerSKUcode] = useState("");
+  const [img, setImg] = useState("");
   const [apiData, setApiData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [suppliers, setSuppliers] = useState([]);
@@ -56,32 +57,34 @@ function Item() {
   const [searchTermMRP, setSearchTermMRP] = useState("");
   const [searchTermSellerSKU, setSearchTermSellerSKU] = useState("");
   const [searchTermSKUCode, setSearchTermSKUCode] = useState("");
-
+  const [searchTermImg, setSearchTermImg] = useState("");
 
   const filteredData = apiData.filter(item => {
     return (
-      item.description.toLowerCase().includes(searchTermDescription.toLowerCase()) &&
-      item.packOf.toLowerCase().includes(searchTermPackOf.toLowerCase()) &&
-      item.group1.toLowerCase().includes(searchTermGroup1.toLowerCase()) &&
-      item.group2.toLowerCase().includes(searchTermGroup2.toLowerCase()) &&
-      item.group3.toLowerCase().includes(searchTermGroup3.toLowerCase()) &&
-      item.sizeRange.toLowerCase().includes(searchTermSizeRange.toLowerCase()) &&
-      item.size.toString().toLowerCase().includes(searchTermSize.toLowerCase()) && // Convert to string
-      item.unit.toLowerCase().includes(searchTermUnit.toLowerCase()) &&
-      item.barcode.toLowerCase().includes(searchTermBarcode.toLowerCase()) &&
-      item.sellingPrice.toString().toLowerCase().includes(searchTermSellingPrice.toLowerCase()) && // Convert to string
-      item.mrp.toString().toLowerCase().includes(searchTermMRP.toLowerCase()) && // Convert to string
-      item.sellerSKUCode.toLowerCase().includes(searchTermSellerSKU.toLowerCase()) &&
-      item.skucode.toLowerCase().includes(searchTermSKUCode.toLowerCase())
+      (!searchTermDescription || (item.description && item.description.toLowerCase().includes(searchTermDescription.toLowerCase()))) &&
+      (!searchTermPackOf || (item.packOf && item.packOf.toLowerCase().includes(searchTermPackOf.toLowerCase()))) &&
+      (!searchTermGroup1 || (item.group1 && item.group1.toLowerCase().includes(searchTermGroup1.toLowerCase()))) &&
+      (!searchTermGroup2 || (item.group2 && item.group2.toLowerCase().includes(searchTermGroup2.toLowerCase()))) &&
+      (!searchTermGroup3 || (item.group3 && item.group3.toLowerCase().includes(searchTermGroup3.toLowerCase()))) &&
+      (!searchTermSizeRange || (item.sizeRange && item.sizeRange.toLowerCase().includes(searchTermSizeRange.toLowerCase()))) &&
+      (!searchTermSize || (item.size && item.size.toString().toLowerCase().includes(searchTermSize.toLowerCase()))) &&
+      (!searchTermUnit || (item.unit && item.unit.toLowerCase().includes(searchTermUnit.toLowerCase()))) &&
+      (!searchTermBarcode || (item.barcode && item.barcode.toLowerCase().includes(searchTermBarcode.toLowerCase()))) &&
+      (!searchTermSellingPrice || (item.sellingPrice && item.sellingPrice.toString().toLowerCase().includes(searchTermSellingPrice.toLowerCase()))) &&
+      (!searchTermMRP || (item.mrp && item.mrp.toString().toLowerCase().includes(searchTermMRP.toLowerCase()))) &&
+      (!searchTermSellerSKU || (item.sellerSKUCode && item.sellerSKUCode.toLowerCase().includes(searchTermSellerSKU.toLowerCase()))) &&
+      (!searchTermSKUCode || (item.skucode && item.skucode.toLowerCase().includes(searchTermSKUCode.toLowerCase()))) &&
+      (searchTermImg === null || searchTermImg === '' || (item.img && item.img.toLowerCase().includes(searchTermImg.toLowerCase())))
     );
   });
+  
   
   
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    if (form.checkValidity() === false || !barcode || !description || !group1 || !group2 || !group3 || !mrp ||!packOf ||!parentSKU ||!sellerSKUCode
+    if (form.checkValidity() === false || !barcode || !description || !group1 || !group2 || !group3 || !mrp ||!packOf ||!sellerSKUCode
      ||!sellingPrice ||!size ||!sizeRange || !skucode || !unit || !Supplier) {
       event.stopPropagation();
       setValidated(true); 
@@ -106,7 +109,8 @@ function Item() {
         barcode,
         sellingPrice,
         mrp,
-        sellerSKUCode
+        sellerSKUCode,
+        img
       };
 
       console.log(formData)
@@ -131,7 +135,7 @@ function Item() {
           setSKUCode(""); 
           setUnit(""); 
           setSupplier("");    
-          
+          setImg("");
         
         })
         .catch(error => {
@@ -185,9 +189,6 @@ function Item() {
     }
   };
   
-  
-  
-  
 
   const handleSKUCodeChange = (event, value1) => {
     if (value1) {
@@ -206,7 +207,8 @@ function Item() {
   }, [apiData]);
 
   const handleRowClick = (item) => {
-    setSupplier(item.supplier);
+    console.log("parentSKU" + item.parentSKU);
+    setSupplier(item.supplier.supplierName);
     setSKUCode(item.skucode);
     setDescription(item.description);
     setPackof(item.packOf);
@@ -221,14 +223,16 @@ function Item() {
     setSellingPrice(item.sellingPrice);
     setMRP(item.mrp);
     setSellerSKUcode(item.sellerSKUCode);
-
+    setImg(item.img || '');
     setRowSelected(true);
+    setSelectedItem(item);
   };
 
   const handleRowSubmit = () => {
-    if (selectedItem) {
-      const { itemId } = selectedItem; // Extract itemId from the selectedItem
-      const updatedItem = {
+    console.log("handleRowSubmit triggered");
+    console.log(selectedItem)
+    if (rowSelected && selectedItem) {
+      const formData = { 
         // Prepare the updated item object with the changes
         ...selectedItem,
         supplierId,
@@ -245,22 +249,41 @@ function Item() {
         barcode,
         sellingPrice,
         mrp,
-        sellerSKUCode
+        sellerSKUCode,
+        img
       };
 
-      // Send a PUT request to update the item
-      axios.put(`http://localhost:8080/items/${itemId}`, updatedItem)
-        .then(response => {
-          console.log('PUT request successful:', response);
-          // Reset the form and other state variables after successful update
-          setValidated(false);
-          setSelectedItem(null);
-          // Reset other state variables as needed...
-        })
-        .catch(error => {
-          console.error('Error sending PUT request:', error);
-        });
-    }
+      console.log('form data: ', formData)
+    console.log("id: ", selectedItem.itemId)
+    axios.put(`http://localhost:8080/items/${selectedItem.itemId}`, formData)
+      .then(response => {
+        
+        console.log('PUT request successful:', response);
+        setApiData(prevData => prevData.map(item => item.itemId === selectedItem.itemId ? response.data : item)); // Update the specific item
+
+        setValidated(false);
+        setRowSelected(false);
+        setSupplier("");
+        setSKUCode("");
+        setDescription("");
+        setPackof("");
+        setParentSKU("");
+        setGroup1("");
+        setGroup2("");
+        setGroup3("");
+        setSizeRange("");
+        setSize("");
+        setUnit("");
+        setSellerSKUcode("");
+        setBarcode("");
+        setSellingPrice("");
+        setMRP("")
+        setImg("")
+      })
+      .catch(error => {
+        console.error('Error sending PUT request:', error);
+      });
+  }
   };
   
 
@@ -293,7 +316,8 @@ function Item() {
               barcode: barcode,
               sellingPrice: sellingPrice,
               mrp: mrp,
-              sellerSKUCode: sellerSKUCode
+              sellerSKUCode: sellerSKUCode,
+      
             };
           console.log(formattedData)
             postData(formattedData);
@@ -356,25 +380,22 @@ function Item() {
                 
         <Form noValidate validated={validated} onSubmit={handleSubmit}>
           <Row className="mb-3">      
-          <Form.Group as={Col} md="4" controlId="validationCustom02">
-  <Form.Label>Supplier</Form.Label>
-  <Form.Select
-    required
-    onChange={(e) => handleSupplierChange(e, e.target.value)}
-    value={Supplier} // Change 'supplier' to 'Supplier'
-  >
-    <option value="">Select Supplier</option>
-    {suppliers.map((supplier) => (
-      <option key={supplier.supplierId} value={supplier.supplierName}>
-        {supplier.supplierName}
-      </option>
-    ))}
-  </Form.Select>
-  <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-</Form.Group>
-
-
-
+          <Form.Group as={Col} md="4" controlId="validationCustom01">
+            <Form.Label>Supplier</Form.Label>
+            <Form.Select
+              required
+              onChange={(e) => handleSupplierChange(e, e.target.value)}
+              value={Supplier} // Change 'supplier' to 'Supplier'
+            >
+            <option value="">Select Supplier</option>
+            {suppliers.map((supplier) => (
+              <option key={supplier.supplierId} value={supplier.supplierName}>
+                {supplier.supplierName}
+              </option>
+            ))}
+          </Form.Select>
+            <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+          </Form.Group>
 
           <Form.Group as={Col} md="4" controlId="validationCustom02">
             <Form.Label>SKUCode</Form.Label>
@@ -417,25 +438,15 @@ function Item() {
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
                 
-        <Form.Group as={Col} md="4" controlId="validationCustom01">
-          <Form.Label>ParentSKU</Form.Label>
-            {/* <Autocomplete
-              disablePortal
-              id="combo-box-demo"
-              options={uniqueSKUCodes}
-              getOptionLabel={(option) => option}
-              // value={initialParentSKU} // Use initialParentSKU as the initial value
-              onChange={(event, value1) => handleSKUCodeChange(event, value1)}
-              renderInput={(params) => <TextField {...params} label="SKU Code" />}
-              isOptionEqualToValue={(option, value) => option === value} // Customize the equality test
-            /> */}
+        <Form.Group as={Col} md="4" controlId="validationCustom02">
+          <Form.Label>ParentSKU</Form.Label> 
 
-            <input list="parentSKUs" className="form-control" onChange={(e) => handleParentSKUChange(e)} placeholder='Choose parent SKU...' />
-              <datalist id="parentSKUs">
-                {uniqueSKUCodes.map((skuCode) => (
-                  <option key={skuCode} value={skuCode} />
-                ))}
-              </datalist>
+          <Form.Select onChange={(e) => handleParentSKUChange(e)} value={parentSKU} aria-label="Choose parent SKU...">
+            <option value="">Choose parent SKU...</option>
+            {uniqueSKUCodes.map((skuCode) => (
+              <option key={skuCode} value={skuCode}>{skuCode}</option>
+            ))}
+          </Form.Select>
             
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
@@ -576,8 +587,31 @@ function Item() {
             />
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
-      </Row>
-                  
+        </Row>
+        <Row className="mb-3">
+        <Form.Group as={Col} md="4" controlId="validationCustom01">
+  <Form.Label>Image URL</Form.Label>
+  <Form.Control
+    required
+    type="text"
+    placeholder="Image URL"
+    value={img}
+    onChange={(e) => setImg(e.target.value)}
+  />
+  <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+</Form.Group>
+<Form.Group>
+{img && (
+      <div>
+      
+        <img src={img} alt="item image" style={{ width:"30%", height:"10%", margin:"1%" }} />
+      </div>
+    )}
+</Form.Group>
+        </Row>
+        
+
+            
       <div className='buttons'>
       {rowSelected ? (
         <Button onClick={handleRowSubmit}>Edit</Button>
@@ -602,8 +636,8 @@ function Item() {
       </AccordionSummary>
           <AccordionDetails>
         {apiData && (
-  
-      <table className='custom-table'>
+  <div style={{ overflowX: 'auto' }}> 
+      <Table className='custom-table'>
         <thead>
           <tr>
             <th></th>
@@ -719,6 +753,14 @@ function Item() {
                   onChange={(e) => setSearchTermSKUCode(e.target.value)}
                 /></span>
             </th>
+            <th>Image URL
+            <span style={{ margin: '0 10px' }}><input
+                  type="text"
+                  placeholder="Search by img-url"
+                  value={searchTermImg}
+                  onChange={(e) => setSearchTermImg(e.target.value)}
+                /></span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -752,11 +794,13 @@ function Item() {
               <td>{item.mrp}</td>
               <td>{item.sellerSKUCode}</td>
               <td>{item.skucode}</td>
+              <td>{item.img ? item.img : ''}</td>
+
             </tr>
           ))}
         </tbody>
-      </table>
-
+      </Table>
+</div>
       )}
           </AccordionDetails>
           </Accordion>

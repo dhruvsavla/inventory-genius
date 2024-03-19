@@ -77,6 +77,9 @@ public class Item {
     @Column(name = "SellerSKUcode", length = 100)
     private String sellerSKUCode;
 
+    @Column(name = "img")
+    private String img;
+
     @ManyToMany(mappedBy = "items")
     @JsonIgnore
     private List<Order> orders = new ArrayList<>();
@@ -106,9 +109,9 @@ public class Item {
 
     public Item(Long itemId, String sKUCode, String description, String packOf, String parentSKU, String group1,
             String group2, String group3, String sizeRange, String size, String unit, String barcode,
-            BigDecimal sellingPrice, BigDecimal mrp, String sellerSKUCode) {
+            BigDecimal sellingPrice, BigDecimal mrp, String sellerSKUCode, String img) {
         this.itemId = itemId;
-        SKUCode = sKUCode;
+        this.SKUCode = sKUCode;
         this.description = description;
         this.packOf = packOf;
         this.parentSKU = parentSKU;
@@ -122,10 +125,27 @@ public class Item {
         this.sellingPrice = sellingPrice;
         this.mrp = mrp;
         this.sellerSKUCode = sellerSKUCode;
+        this.img = img;
     }
 
     public Long getItemId() {
         return itemId;
+    }
+
+    public String getImg() {
+        return img;
+    }
+
+    public void setImg(String img) {
+        this.img = img;
+    }
+
+    public Return getOrder() {
+        return order;
+    }
+
+    public void setOrder(Return order) {
+        this.order = order;
     }
 
     public void setItemId(Long itemId) {

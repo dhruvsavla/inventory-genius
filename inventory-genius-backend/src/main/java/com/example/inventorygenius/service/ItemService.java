@@ -51,7 +51,19 @@ public class ItemService {
             existingItem.setSKUCode(updatedItem.getSKUCode());
             existingItem.setDescription(updatedItem.getDescription());
             existingItem.setPackOf(updatedItem.getPackOf());
-            // Set other fields similarly
+            existingItem.setParentSKU(updatedItem.getParentSKU());
+            existingItem.setGroup1(updatedItem.getGroup1());
+            existingItem.setGroup2(updatedItem.getGroup2());
+            existingItem.setGroup3(updatedItem.getGroup3());
+            existingItem.setSizeRange(updatedItem.getSizeRange()); 
+            existingItem.setSize(updatedItem.getSize());
+            existingItem.setUnit(updatedItem.getUnit());
+            existingItem.setSellerSKUCode(updatedItem.getSellerSKUCode());
+            existingItem.setBarcode(updatedItem.getBarcode());
+            existingItem.setSellingPrice(updatedItem.getSellingPrice());
+            existingItem.setMrp(updatedItem.getMrp());
+            existingItem.setImg(updatedItem.getImg());
+
             return itemRepository.save(existingItem);
         } else {
             // Handle case when item with given ID is not found

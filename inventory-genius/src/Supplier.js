@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+// Import useState hook from React
+import React, { useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
@@ -68,7 +69,7 @@ const handleSubmit = (event) => {
   event.preventDefault();
   const form = event.currentTarget;
 
-  if (form.checkValidity() === false || !phonel || !address || !supplierName) {
+  if (form.checkValidity() === false || !phonel || !supplierName) {
     event.stopPropagation();
     setValidated(true); 
     return;
@@ -97,10 +98,7 @@ const handleSubmit = (event) => {
         console.error('Error sending POST request:', error);
       });
   }
-
- 
 };
-
 
 const handleRowSubmit = () => {
   console.log("handleRowSubmit triggered");
@@ -117,6 +115,8 @@ const handleRowSubmit = () => {
       .then(response => {
         
         console.log('PUT request successful:', response);
+        setApiData(prevData => prevData.map(item => item.supplierId === selectedItem.supplierId ? response.data : item)); // Update the specific item
+
         setValidated(false);
         setRowSelected(false);
         setPhone("");
@@ -128,8 +128,6 @@ const handleRowSubmit = () => {
       });
   }
 };
-
-
 
 const handleRowClick = (supplier) => {
   setAddress(supplier.address);
@@ -173,153 +171,155 @@ const handleDelete = (id) => {
     console.error('Error deleting row:', error);
   });
 
-
   console.log("After deletion, apiData:", apiData);
 };
 
-
-
-
-    return (
-      <div>
-        <div className='title'>
-          <h1>Supplier</h1>
-        </div>
-      
-        <Accordion defaultExpanded>
-        <AccordionSummary className='acc-summary'
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel3-content"
-          id="panel3-header"
-          sx={{ backgroundColor: '#E5E7E9' }} 
-        >
-          <h4>Supplier Form</h4>
-        </AccordionSummary>
-        <AccordionDetails>
-        <Form noValidate validated={validated} onSubmit={handleSubmit}>
-          <Row className="mb-3">
-            <Form.Group as={Col} md="4" controlId="validationCustom01">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                  required
-                  type="text"
-                  placeholder="Supplier Name"
-                  name="supplierName"
-                  value={supplierName}
-                  onChange={(e) => setName(e.target.value)}
-                />
-          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-        </Form.Group>
-        <Form.Group as={Col} md="4" controlId="validationCustom02">
-          <Form.Label>Adress</Form.Label>
-          <Form.Control
-                  required
-                  type="text"
-                  placeholder="Address"
-                  name="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                />
-          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-        </Form.Group>
+return (
+  <div>
+    <div className='title'>
+      <h1>Supplier</h1>
+    </div>
+  
+    <Accordion defaultExpanded>
+    <AccordionSummary className='acc-summary'
+      expandIcon={<ExpandMoreIcon />}
+      aria-controls="panel3-content"
+      id="panel3-header"
+      sx={{ backgroundColor: '#E5E7E9' }} 
+    >
+      <h4>Supplier Form</h4>
+    </AccordionSummary>
+    <AccordionDetails>
+    <Form noValidate validated={validated} onSubmit={handleSubmit}>
+      <Row className="mb-3">
         <Form.Group as={Col} md="4" controlId="validationCustom01">
-          <Form.Label>Phone</Form.Label>
+          <Form.Label>Name</Form.Label>
           <Form.Control
-                  required
-                  type="text"
-                  placeholder="phonel"
-                  name="phonel"
-                  value={phonel}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-        </Form.Group>
-      </Row>
-      <div className='buttons'>
-      {rowSelected ? (
-        <Button onClick={handleRowSubmit}>Edit</Button>
-      ) : (
-        <Button type="submit" onClick={handleSubmit}>Submit</Button>
-      )}
-      <span style={{ margin: '0 10px' }}>or</span>
-            <input type="file" onChange={handleFileUpload} />
-            </div>
-            </Form>
-            </AccordionDetails>
-        </Accordion>
-        
-        <Accordion>
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel3-content"
-          id="panel3-header"
-          sx={{ backgroundColor: '#E5E7E9' }} 
-        >
-          <h4>List View of Suppliers</h4>
-        </AccordionSummary>
-        <AccordionDetails>
-
-        <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th></th>
-                <th>Name
-                <span style={{ margin: '0 10px' }}><input
-                  type="text"
-                  placeholder="Search by name"
-                  value={searchTermName}
-                  onChange={(e) => setSearchTermName(e.target.value)}
-                /></span>
-                </th>
-                <th>Adress
-                <span style={{ margin: '0 10px' }}><input
-                  type="text"
-                  placeholder="Search by address"
-                  value={searchTermAddress}
-                  onChange={(e) => setSearchTermAddress(e.target.value)}
-                />
-                </span>
-                </th>
-                <th>Phone No
-                <span style={{ margin: '0 10px' }}><input
-                  type="text"
-                  placeholder="Search by phone"
-                  value={searchTermPhone}
-                  onChange={(e) => setSearchTermPhone(e.target.value)}
-                />
-                </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map(supplier => (
-                <tr key={supplier.supplierId} onClick={() => handleRowClick(supplier)}>
-                    <td style={{ width: '50px', textAlign: 'center' }}>
-                      
-                    <button
-  style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
-  className="delete-icon"
-  onClick={(e) => {
-    e.stopPropagation(); // Stop propagation of the click event
-    handleDelete(supplier.supplierId); // Call handleDelete function
-  }}
+              required
+              type="text"
+              placeholder="Supplier Name"
+              name="supplierName"
+              value={supplierName}
+              onChange={(e) => setName(e.target.value)}
+            />
+      <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+    </Form.Group>
+    <Form.Group as={Col} md="4" controlId="validationCustom02">
+      <Form.Label>Address</Form.Label>
+      <Form.Control
+              required
+              type="text"
+              placeholder="Address"
+              name="address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+      <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+    </Form.Group>
+    <Form.Group as={Col} md="4" controlId="validationCustom01">
+      <Form.Label>Phone</Form.Label>
+      <Form.Control
+              required
+              type="text"
+              placeholder="Phone"
+              name="phonel"
+              value={phonel}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+      <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+    </Form.Group>
+   
+  </Row>
+  <div className='buttons'>
+  {rowSelected ? (
+    <Button onClick={handleRowSubmit}>Edit</Button>
+  ) : (
+    <Button type="submit" onClick={handleSubmit}>Submit</Button>
+  )}
+  <span style={{ margin: '0 10px' }}>or</span>
+          <input type="file" onChange={handleFileUpload} />
+          </div>
+          
+          </Form>
+          </AccordionDetails>
+      </Accordion>
+      
+      <Accordion>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        aria-controls="panel3-content"
+        id="panel3-header"
+        sx={{ backgroundColor: '#E5E7E9' }} 
+      >
+        <h4>List View of Suppliers</h4>
+      </AccordionSummary>
+      <AccordionDetails>
+      <div style={{ overflowX: 'auto' }}> 
+      <Table striped bordered hover>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Name
+              <span style={{ margin: '0 10px' }}><input
+                type="text"
+                placeholder="Search by name"
+                value={searchTermName}
+                onChange={(e) => setSearchTermName(e.target.value)}
+              /></span>
+              </th>
+              <th>Address
+              <span style={{ margin: '0 10px' }}><input
+                type="text"
+                placeholder="Search by address"
+                value={searchTermAddress}
+                onChange={(e) => setSearchTermAddress(e.target.value)}
+              />
+              </span>
+              </th>
+              <th>Phone No
+              <span style={{ margin: '0 10px' }}><input
+                type="text"
+                placeholder="Search by phone"
+                value={searchTermPhone}
+                onChange={(e) => setSearchTermPhone(e.target.value)}
+              />
+              </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map(supplier => (
+              <tr key={supplier.supplierId} onClick={() => handleRowClick(supplier)}>
+                  <td style={{ width: '50px', textAlign: 'center' }}>
+                    
+                  <button
+style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
+className="delete-icon"
+onClick={(e) => {
+  e.stopPropagation(); // Stop propagation of the click event
+  handleDelete(supplier.supplierId); // Call handleDelete function
+}}
 >
-  <DeleteIcon style={{ color: '#F00' }} />
+<DeleteIcon style={{ color: '#F00' }} />
 </button>
 
-                  </td>
+                </td>
 
-                  <td>{supplier.supplierName}</td>
-                  <td>{supplier.address}</td>
-                  <td>{supplier.phonel}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </AccordionDetails>
-      </Accordion>
-            </div>
-  );
+                <td>{supplier.supplierName}</td>
+                <td>{supplier.address}</td>
+                <td>{supplier.phonel}</td>
+              </tr>
+            ))}
+          </tbody>
+        
+        </Table>
+        </div>
+      </AccordionDetails>
+    </Accordion>
+    {/* Display the image based on the entered URL */}
+    
+        </div>
+);
 }
 
 export default Supplier;

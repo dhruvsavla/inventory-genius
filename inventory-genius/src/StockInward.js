@@ -126,6 +126,8 @@ const handleRowSubmit = () => {
       .then(response => {
         
         console.log('PUT request successful:', response);
+        setApiData(prevData => prevData.map(item => item.stockInwardId === selectedItem.stockInwardId ? response.data : item)); // Update the specific item
+
         setValidated(false);
         setRowSelected(false);
         setDate(""); 
@@ -204,6 +206,16 @@ const handleDelete = (id) => {
             <div className='title'>
                     <h1>Stock Inward</h1>
             </div>
+            <Accordion defaultExpanded>
+        <AccordionSummary className='acc-summary'
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="panel3-content"
+          id="panel3-header"
+          sx={{ backgroundColor: '#E5E7E9' }} 
+        >
+          <h4>Stock Inward Form</h4>
+        </AccordionSummary>
+        <AccordionDetails>
     <Form noValidate validated={validated} onSubmit={handleSubmit}>
       <Row className="mb-3">
         <Form.Group as={Col} md="4" controlId="validationCustom01">
@@ -264,7 +276,8 @@ const handleDelete = (id) => {
             <input type="file" onChange={handleFileUpload} />
             </div>
             </Form>
-      
+      </AccordionDetails>
+      </Accordion>
             <Accordion>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}

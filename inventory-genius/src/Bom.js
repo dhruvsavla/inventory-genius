@@ -85,8 +85,10 @@ function Bom() {
     console.log("qty = ", qty);
     event.preventDefault();
     const form = event.currentTarget;
-    if (form.checkValidity() === false) {
+    if (form.checkValidity() === false || !bomItem || !qty || !skucode) {
       event.stopPropagation();
+      setValidated(true); 
+      return;
     } else {
       const formData = {
         skucode, 
@@ -128,6 +130,8 @@ function Bom() {
         .then(response => {
           
           console.log('PUT request successful:', response);
+          setApiData(prevData => prevData.map(item => item.bomId === selectedItem.bomId ? response.data : item)); // Update the specific item
+
           setValidated(false);
           setRowSelected(false);
           setSku("");

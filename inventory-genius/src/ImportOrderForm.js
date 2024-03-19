@@ -127,8 +127,11 @@ function ImportOrderForm() {
 const handleSubmit = (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    if (form.checkValidity() === false) {
+    if (form.checkValidity() === false || !date || !orderNo || !portalOrderNo || !portalOrderLineId || !portalSKU || !productDescription ||!shipByDate ||!dispatched
+     ||!courier ||!portal ||!sellerSKU || !qty) {
       event.stopPropagation();
+      setValidated(true); 
+      return;
     } else {
       // Fetch item based on supplier and supplier SKU code
       axios.get(`http://localhost:8080/items/order/${sellerSKU}/${productDescription}`)
@@ -210,6 +213,8 @@ const handleRowSubmit = () => {
       .then(response => {
         
         console.log('PUT request successful:', response);
+        setApiData(prevData => prevData.map(item => item.orderId === selectedItem.orderId ? response.data : item)); // Update the specific item
+
         setValidated(false);
         setRowSelected(false);
         setDate("");
@@ -326,7 +331,7 @@ const handleDelete = (id) => {
           id="panel3-header"
           sx={{ backgroundColor: '#E5E7E9' }} 
         >
-          <h4>Storage Form</h4>
+          <h4>Order Form</h4>
         </AccordionSummary>
         <AccordionDetails>
     <Form noValidate validated={validated} onSubmit={handleSubmit}>
@@ -537,7 +542,7 @@ const handleDelete = (id) => {
           <h4>List View of Orders</h4>
         </AccordionSummary>
         <AccordionDetails>
-        
+        <div style={{ overflowX: 'auto' }}> 
         <Table striped bordered hover>
             <thead>
                 <tr>
@@ -711,6 +716,7 @@ const handleDelete = (id) => {
               ))}
             </tbody>
           </Table>
+          </div>
         </AccordionDetails>
       </Accordion>
   

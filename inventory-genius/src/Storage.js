@@ -121,6 +121,8 @@ const handleRowSubmit = () => {
       .then(response => {
         
         console.log('PUT request successful:', response);
+        setApiData(prevData => prevData.map(item => item.storageId === selectedItem.storageId ? response.data : item)); // Update the specific item
+
         setValidated(false);
         setRowSelected(false);
         setBin("");

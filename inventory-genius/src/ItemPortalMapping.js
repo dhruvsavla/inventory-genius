@@ -147,6 +147,8 @@ function ItemPortalMapping() {
           .then(response => {
             
             console.log('PUT request successful:', response);
+            setApiData(prevData => prevData.map(item => item.id === selectedItem.id ? response.data : item)); // Update the specific item
+
             setValidated(false);
             setRowSelected(false);
             setPortal("");
@@ -281,7 +283,7 @@ function ItemPortalMapping() {
           id="panel3-header"
           sx={{ backgroundColor: '#E5E7E9' }} 
         >
-          <h4>List View of Bom</h4>
+          <h4>List View of ItemPortalMapping</h4>
         </AccordionSummary>
         <AccordionDetails>
         <Table striped bordered hover>

@@ -19,11 +19,11 @@ public class SupplierController {
     @Autowired
     private SupplierService supplierService;
 
-    @PostMapping
-    public ResponseEntity<Supplier> addSupplier(@RequestBody Supplier supplier) {
-        Supplier newSupplier = supplierService.addSupplier(supplier);
-        return new ResponseEntity<>(newSupplier, HttpStatus.CREATED);
-    }
+    // @PostMapping
+    // public ResponseEntity<Supplier> addSupplier(@RequestBody Supplier supplier) {
+    //     Supplier newSupplier = supplierService.addSupplier(supplier);
+    //     return new ResponseEntity<>(newSupplier, HttpStatus.CREATED);
+    // }
 
     @GetMapping
     public ResponseEntity<List<Supplier>> getAllSuppliers() {

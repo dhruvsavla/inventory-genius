@@ -52,6 +52,59 @@ function ImportOrderForm() {
   const [searchTermShibByDate, setSearchTermShibByDate] = useState('');
   const [searchTermProductDescription, setSearchTermProductDescription] = useState('');
   const [searchTermPortal, setSearchTermPortal] = useState('');
+  const [selectedPortal, setSelectedPortal] = useState(""); // State variable for selected portal
+  const [filteredPortalSKUList, setFilteredPortalSKUList] = useState([]); // State variable for filtered portal SKU list
+  const [filteredSellerSKUList, setFilteredSellerSKUList] = useState([]); // State variable for filtered seller SKU list
+  const [filteredItemDescriptionList, setFilteredItemDescriptionList] = useState([]); // State variable for filtered item description list
+  const [portalMapping, setPortalMapping] = useState({}); // State variable to store portal mapping data
+
+  useEffect(() => {
+    const fetchPortalMapping = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/itemportalmapping'); // Replace 'your-api-endpoint' with the actual API endpoint
+        setPortalMapping(response.data); // Set portal mapping data
+        console.log("iitem portal mapping: "+JSON.stringify(portalMapping));
+      } catch (error) {
+        console.error('Error fetching portal mapping:', error);
+      }
+    };
+
+    fetchPortalMapping(); // Call the fetchPortalMapping function
+  }, []);
+
+
+  //useEffect to update filtered lists when selectedPortal changes
+  useEffect(() => {
+    // Check if portalMapping is empty or not
+     if (Object.keys(portalMapping).length === 0) return;
+
+    // Filter portal SKU list based on selected portal
+    const filteredPortalSKUs = portalMapping.filter(item => item.portal === selectedPortal).map(item => item.portalSkuCode);
+    setFilteredPortalSKUList(filteredPortalSKUs);
+  
+    // Filter seller SKU list based on selected portal SKU
+    const filteredSellerSKUs = portalMapping.filter(item => item.portal === selectedPortal && item.portalSkuCode === portalSKU).map(item => item.sellerSkuCode);
+    setFilteredSellerSKUList(filteredSellerSKUs);
+  
+    // Filter item description list based on selected portal SKU
+    const filteredItemDescriptions = portalMapping.filter(item => item.portal === selectedPortal && item.portalSkuCode === portalSKU).map(item => item.item.description);
+    setFilteredItemDescriptionList(filteredItemDescriptions);
+  }, [selectedPortal, portalSKU, portalMapping]); // Include portalMapping in the dependencies array
+
+  // Your JSX component rendering goes here
+
+
+  useEffect(() => {
+    const currentDate = new Date(); // Get current date
+    const year = currentDate.getFullYear(); // Get current year
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Get current month and pad with leading zero if needed
+    const day = String(currentDate.getDate() + 1).padStart(2, '0'); // Get current day and pad with leading zero if needed
+    const formattedDate = `${year}-${month}-${day}`; // Format date as YYYY-MM-DD
+    setDate(formattedDate); // Set the default date state
+    //setOrderNoDate(formattedDate);
+    // setOrderno(serial);
+  }, []); 
+
 
   const formatDate = (date) => {
     return date ? new Date(date).toLocaleDateString().toLowerCase() : '';
@@ -59,21 +112,21 @@ function ImportOrderForm() {
 
   console.log("apiData:", apiData);
   const filteredData = apiData.filter(item =>
-    formatDate(item.date).includes(searchTermDate.toLowerCase()) &&
-    formatDate(item.shipByDate).includes(searchTermShibByDate.toLowerCase()) &&
-    item.orderNo && item.orderNo.toString().toLowerCase().includes(searchTermOrderNo.toLowerCase()) &&
-    item.portalOrderNo && item.portalOrderNo.toString().toLowerCase().includes(searchTermPortalOrderNo.toLowerCase()) &&
-    item.portalOrderLineId && item.portalOrderLineId.toString().toLowerCase().includes(searchTermPortalLineId.toLowerCase()) &&
-    item.qty && item.qty.toString().toLowerCase().includes(searchTermQuantity.toLowerCase()) &&
-    item.courier && item.courier.toString().toLowerCase().includes(searchTermCourier.toLowerCase()) &&
-    item.dispatched && item.dispatched.toString().toLowerCase().includes(searchTermDispatched.toLowerCase()) &&
-       item.sellerSKU && item.sellerSKU.toString().toLowerCase().includes(searchTermSellerSKU.toLowerCase()) &&
-       item.portalSKU && item.portalSKU.toString().toLowerCase().includes(searchTermPortalSKU.toLowerCase()) &&
-       item.productDescription && item.productDescription.toString().toLowerCase().includes(searchTermProductDescription.toLowerCase()) &&
-       item.portal && item.portal.toString().toLowerCase().includes(searchTermPortal.toLowerCase())
-
+    (item.date && formatDate(item.date).includes(searchTermDate.toLowerCase())) ||
+    (item.shipByDate && formatDate(item.shipByDate).includes(searchTermShibByDate.toLowerCase())) ||
+    (item.orderNo && item.orderNo.toString().toLowerCase().includes(searchTermOrderNo.toLowerCase())) ||
+    (item.portalOrderNo && item.portalOrderNo.toString().toLowerCase().includes(searchTermPortalOrderNo.toLowerCase())) ||
+    (item.portalOrderLineId && item.portalOrderLineId.toString().toLowerCase().includes(searchTermPortalLineId.toLowerCase())) ||
+    (item.qty && item.qty.toString().toLowerCase().includes(searchTermQuantity.toLowerCase())) ||
+    (item.courier && item.courier.toString().toLowerCase().includes(searchTermCourier.toLowerCase())) ||
+    (item.dispatched && item.dispatched.toString().toLowerCase().includes(searchTermDispatched.toLowerCase())) ||
+    (item.sellerSKU && item.sellerSKU.toString().toLowerCase().includes(searchTermSellerSKU.toLowerCase())) ||
+    (item.portalSKU && item.portalSKU.toString().toLowerCase().includes(searchTermPortalSKU.toLowerCase())) ||
+    (item.productDescription && item.productDescription.toString().toLowerCase().includes(searchTermProductDescription.toLowerCase())) ||
+    (item.portal && item.portal.toString().toLowerCase().includes(searchTermPortal.toLowerCase()))
     // Add other filtering conditions here...
   );
+  
   console.log("filteredData:", filteredData);
 
   // const filteredData = apiData.filter(item => {
@@ -125,20 +178,24 @@ function ImportOrderForm() {
 };
 
 const handleSubmit = (event) => {
+  console.log("in handle submit");
     event.preventDefault();
     const form = event.currentTarget;
-    if (form.checkValidity() === false || !date || !orderNo || !portalOrderNo || !portalOrderLineId || !portalSKU || !productDescription ||!shipByDate ||!dispatched
-     ||!courier ||!portal ||!sellerSKU || !qty) {
+    if (form.checkValidity() === false) {
       event.stopPropagation();
+      console.log("true");
       setValidated(true); 
       return;
-    } else {
+    } 
+    
+    else {
       // Fetch item based on supplier and supplier SKU code
-      axios.get(`http://localhost:8080/items/order/${sellerSKU}/${productDescription}`)
+      axios.get(`http://localhost:8080/item/supplier/order/search/${sellerSKU}/${productDescription}`)
         .then(response => {
           if (response.data) {
             const itemsArray = []; // Initialize an array to store items
             itemsArray.push(response.data);
+            console.log("in item get");
             const formData = {
               date,
               orderNo,
@@ -154,6 +211,7 @@ const handleSubmit = (event) => {
               qty,
               items: itemsArray
             };
+            console.log("out item get");
             console.log('form data: ', formData);
             axios.post('http://localhost:8080/orders', formData)
               .then(response => {
@@ -161,7 +219,7 @@ const handleSubmit = (event) => {
                 setValidated(false);
                 setApiData([...apiData, response.data]);
              
-                setDate("");
+                // setDate("");
                 setCourier("");
                 setDispatched("")
                 setOrderno("");
@@ -173,6 +231,8 @@ const handleSubmit = (event) => {
                 setProductDescription("");
                 setSellerSKU("");
                 setPortalSKU("")
+                setSelectedPortal("");
+               
               })
               .catch(error => {
                 console.error('Error sending POST request:', error);
@@ -274,7 +334,7 @@ useEffect(() => {
     .catch(error => {
       console.error('Error fetching portal SKUs:', error);
     });
-    axios.get('http://localhost:8080/items')
+    axios.get('http://localhost:8080/item/supplier')
     .then(response => {
       // Extract portal SKUs from the response data
       const itemDescription = response.data.map(item => item.description);
@@ -367,13 +427,16 @@ const handleDelete = (id) => {
           <Form.Label>Portal</Form.Label>
           <Form.Select
           required
-          value={portal} // Set the selected value
-          onChange={(e) => setPortal(e.target.value)} // Handle value change
-        >
-          <option value="">Select Portal </option>
-          {/* Map over portalSKUList and create options */}
-          {portalNameList.map((sku, index) => (
-            <option key={index} value={sku}>{sku}</option>
+          value={selectedPortal} // Set the selected value
+          onChange={(e) => {
+            setSelectedPortal(e.target.value); // Handle value change
+            setPortal(e.target.value);
+            setPortalSKU(""); // Reset portal SKU when portal changes
+          }}        >
+          <option value="">Select Portal</option>
+          {/* Map over portalNameList and create options */}
+          {portalNameList.map((portal, index) => (
+            <option key={index} value={portal}>{portal}</option>
           ))}
         </Form.Select>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
@@ -410,16 +473,16 @@ const handleDelete = (id) => {
         <Form.Group as={Col} md="4" controlId="validationCustom01">
           <Form.Label>Portal SKU</Form.Label>
           <Form.Select
-          required
-          value={portalSKU} // Set the selected value
-          onChange={(e) => setPortalSKU(e.target.value)} // Handle value change
-        >
-          <option value="">Select Portal SKU</option>
-          {/* Map over portalSKUList and create options */}
-          {portalSKUList.map((sku, index) => (
-            <option key={index} value={sku}>{sku}</option>
-          ))}
-        </Form.Select>
+            required
+            value={portalSKU} // Set the selected value
+            onChange={(e) => setPortalSKU(e.target.value)} // Handle value change
+          >
+            <option value="">Select Portal SKU</option>
+            {/* Map over filteredPortalSKUList and create options */}
+            {filteredPortalSKUList.map((sku, index) => (
+              <option key={index} value={sku}>{sku}</option>
+            ))}
+          </Form.Select>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
         
@@ -429,31 +492,31 @@ const handleDelete = (id) => {
         <Form.Group as={Col} md="4" controlId="validationCustom01">
           <Form.Label>Seller SKU</Form.Label>
           <Form.Select
-          required
-          value={sellerSKU} // Set the selected value
-          onChange={(e) => setSellerSKU(e.target.value)} // Handle value change
-        >
-          <option value="">Select Seller SKU</option>
-          {/* Map over portalSKUList and create options */}
-          {sellerSKUList.map((sku, index) => (
-            <option key={index} value={sku}>{sku}</option>
-          ))}
-        </Form.Select>
+            required
+            value={sellerSKU} // Set the selected value
+            onChange={(e) => setSellerSKU(e.target.value)} // Handle value change
+          >
+            <option value="">Select Seller SKU</option>
+            {/* Map over filteredSellerSKUList and create options */}
+            {filteredSellerSKUList.map((sku, index) => (
+              <option key={index} value={sku}>{sku}</option>
+            ))}
+          </Form.Select>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
         <Form.Group as={Col} md="4" controlId="validationCustom02">
           <Form.Label>Product Description</Form.Label>
           <Form.Select
-          required
-          value={productDescription} // Set the selected value
-          onChange={(e) => setProductDescription(e.target.value)} // Handle value change
-        >
-          <option value="">Select Seller SKU</option>
-          {/* Map over portalSKUList and create options */}
-          {itemDescriptionList.map((sku, index) => (
-            <option key={index} value={sku}>{sku}</option>
-          ))}
-        </Form.Select>
+            required
+            value={productDescription} // Set the selected value
+            onChange={(e) => setProductDescription(e.target.value)} // Handle value change
+          >
+            <option value="">Select Product Description</option>
+            {/* Map over filteredItemDescriptionList and create options */}
+            {filteredItemDescriptionList.map((description, index) => (
+              <option key={index} value={description}>{description}</option>
+            ))}
+          </Form.Select>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
         
@@ -494,8 +557,8 @@ const handleDelete = (id) => {
           onChange={(e) => setDispatched(e.target.value)} // Handle value change
         >
           <option value="">Select Dispatched</option>
-          <option value="true">True</option>
-          <option value="false">False</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
         </Form.Select>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>

@@ -22,7 +22,9 @@ function ItemPortalMapping() {
     const [supplier, setSeller] = useState("");
     const [sellerSkuCode, setSellerSKU] = useState("");
     const [portalSkuCode, setPortalSKU] = useState("");
+    const [supplierId, setSupplierId] = useState("");
     const [apiData, setApiData] = useState([]); 
+    const [suppliersList, setSuppliersList] = useState([]);
     const [rowSelected, setRowSelected] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [searchTermPortal, setSearchTermPortal] = useState('');
@@ -46,7 +48,7 @@ function ItemPortalMapping() {
         event.stopPropagation();
       } else {
         // Fetch item based on supplier and supplier SKU code
-        axios.get(`http://localhost:8080/items/${sellerSkuCode}/${supplier}`)
+        axios.get(`http://localhost:8080/item/supplier/search/${supplierId}/${sellerSkuCode}`)
           .then(response => {
             if (response.data) {
               const item = response.data;
@@ -109,6 +111,25 @@ function ItemPortalMapping() {
       };
   
       reader.readAsBinaryString(file);
+  };
+
+  const handleSupplierChange = (event, name) => {
+    if (name) {
+      const selectedSupplier = suppliersList.find(supplier => supplier.supplierName === name);
+      if (selectedSupplier) {
+        console.log("Selected Supplier:", selectedSupplier);
+        setSeller(selectedSupplier.supplierName); // Update the selected supplier name
+        setSupplierId(selectedSupplier.supplierId);
+      } else {
+        console.error("Supplier not found for name:", name);
+        // setSupplier(null); // Clear the selected supplier
+        // setSupplierId(""); // Clear the supplierId
+      }
+    } else {
+      // Handle case when no value is selected
+      // setSupplier(null); // Clear the selected supplier
+      // setSupplierId(""); // Clear the supplierId
+    }
   };
   
   const handleDelete = (id) => {
@@ -173,6 +194,14 @@ function ItemPortalMapping() {
     
     
     useEffect(() => {
+      axios.get('http://localhost:8080/supplier')
+      .then(response => {
+        setSuppliersList(response.data); 
+      })
+      .catch(error => {
+        console.error('Error fetching supplier data:', error);
+      });
+
       axios.get('http://localhost:8080/itemportalmapping') 
         .then(response => setApiData(response.data))
         .catch(error => console.error(error));
@@ -222,14 +251,18 @@ function ItemPortalMapping() {
         </Form.Group>
         <Form.Group as={Col} md="4" controlId="validationCustom02">
           <Form.Label>Seller/Supplier</Form.Label>
-          <Form.Control
-            required
-            type="text"
-            placeholder="Seller/Supplier"
-            defaultValue=""
-            value={supplier }
-            onChange={(e) => setSeller(e.target.value)}
-          />
+          <Form.Select
+              required
+              onChange={(e) => handleSupplierChange(e, e.target.value)}
+              value={supplier} // Change 'supplier' to 'Supplier'
+            >
+            <option value="">Select Supplier</option>
+            {suppliersList.map((supplier) => (
+              <option key={supplier.supplierId} value={supplier.supplierName}>
+                {supplier.supplierName}
+              </option>
+            ))}
+          </Form.Select>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
         

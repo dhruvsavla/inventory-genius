@@ -8,6 +8,7 @@ import com.example.inventorygenius.entity.Bom;
 import com.example.inventorygenius.entity.Item;
 import com.example.inventorygenius.entity.Order;
 import com.example.inventorygenius.entity.Storage;
+import com.example.inventorygenius.repository.ItemRepository;
 import com.example.inventorygenius.repository.SupplierRepository;
 
 import java.util.ArrayList;
@@ -21,16 +22,26 @@ public class SupplierService {
     @Autowired
     private SupplierRepository supplierRepository;
 
-    public Supplier addSupplier(Supplier supplier) {
-        List<Item> newItems = new ArrayList<>();
-        for (Item item : supplier.getItemsSupplier()) {
-            if (item.getItemId() == null) { // Check if item is new
-                newItems.add(item);
-            }
-        }
+    @Autowired
+    private ItemRepository itemRepository;
 
-        return supplierRepository.save(supplier);
-    }
+//     public Supplier addSupplier(Supplier supplier) {
+//     List<Item> newItems = new ArrayList<>();
+//     for (ItemSupplier itemSupplier : supplier.getItemSuppliers()) {
+//         if (itemSupplier.getItem().getItemId() == null) { // Check if item is new
+//             newItems.add(itemSupplier.getItem());
+//         }
+//     }
+
+//     // Save new items before saving the supplier
+//     for (Item newItem : newItems) {
+//         itemRepository.save(newItem);
+//     }
+
+//     return supplierRepository.save(supplier);
+// }
+
+    
 
     public List<Supplier> getAllSuppliers() {
         return supplierRepository.findAll();

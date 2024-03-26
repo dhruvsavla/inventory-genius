@@ -1,8 +1,13 @@
 package com.example.inventorygenius.entity;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.hibernate.query.sqm.CastType;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -23,7 +28,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "supplierId")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "supplierId")
 @Table(name = "supplier")
 public class Supplier {
     @Id
@@ -40,8 +45,14 @@ public class Supplier {
     @Column(name = "phone")
     private String phonel;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "supplier", cascade = CascadeType.ALL)
-    private List<Item> itemsSupplier = new ArrayList<>();
+    // @OneToMany(fetch = FetchType.LAZY, mappedBy = "supplier", cascade = CascadeType.ALL)
+    // private List<Item> itemsSupplier = new ArrayList<>();
+
+    
+    @ManyToMany(mappedBy = "suppliers", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    //@JsonManagedReference
+    @JsonIgnore
+    private List<Item> items = new ArrayList<>();
 
     public Supplier() {
 
@@ -86,12 +97,26 @@ public class Supplier {
         this.phonel = phonel;
     }
 
-    public List<Item> getItemsSupplier() {
-        return itemsSupplier;
+    //@JsonManagedReference
+    public List<Item> getItems() {
+        return items;
     }
 
-    public void setItemsSupplier(List<Item> itemsSupplier) {
-        this.itemsSupplier = itemsSupplier;
+    public void setItems(List<Item> items) {
+        this.items = items;
     }
+
+    
+
+    // @JsonManagedReference 
+    // public List<Item> getItemsSupplier() {
+    //     return itemsSupplier;
+    // }
+
+    // public void setItemsSupplier(List<Item> itemsSupplier) {
+    //     this.itemsSupplier = itemsSupplier;
+    // }
+
+    
 
 }

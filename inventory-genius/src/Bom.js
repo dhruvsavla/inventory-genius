@@ -16,6 +16,7 @@ import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import * as XLSX from 'xlsx';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { Link } from 'react-router-dom';
 
 function Bom() {
   const [validated, setValidated] = useState(false);
@@ -33,14 +34,15 @@ function Bom() {
 
   const filteredData = apiData.filter(supplier => {
     return (
-      supplier.qty.toString().toLowerCase().includes(qtySearchTerm.toLowerCase()) && // Convert to string
-      supplier.bomItem.toLowerCase().includes(bomItemSearchTerm.toLowerCase()) &&
-      supplier.skucode.toLowerCase().includes(skuSearchTerm.toLowerCase())
+      (supplier.qty && supplier.qty.toString().toLowerCase().includes(qtySearchTerm.toLowerCase())) && 
+      (supplier.bomItem && supplier.bomItem.toLowerCase().includes(bomItemSearchTerm.toLowerCase())) &&
+      (supplier.skucode && supplier.skucode.toLowerCase().includes(skuSearchTerm.toLowerCase()))
     );
   });
+  
 
   useEffect(() => {
-    axios.get('http://localhost:8080/items') // Fetch SKU codes and descriptions from the items table
+    axios.get('http://localhost:8080/item/supplier') // Fetch SKU codes and descriptions from the items table
       .then(response => {
         // Extract SKU codes and descriptions from the response data and filter out null or undefined values
         const skuData = response.data
@@ -253,6 +255,7 @@ const handleDelete = (id) => {
                       </option>
                     ))}
                   </Form.Select>
+                  <Link to="/Item"><span style = {{float:"right", fontSize:"small", marginTop:"1%", marginRight:"1%"}}>+ add item</span></Link>
                   <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
 
               </Form.Group>

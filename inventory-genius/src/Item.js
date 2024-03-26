@@ -16,6 +16,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import * as XLSX from 'xlsx';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { Link } from 'react-router-dom';
 
 function Item() {
   const [validated, setValidated] = useState(false);
@@ -35,9 +36,10 @@ function Item() {
   const [mrp, setMRP] = useState("");
   const [sellerSKUCode, setSellerSKUcode] = useState("");
   const [img, setImg] = useState("");
+  const [suppliers, setSuppliers] = useState([]);
   const [apiData, setApiData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [suppliers, setSuppliers] = useState([]);
+  const [suppliersList, setSuppliersList] = useState([]);
   const [supplierId, setSupplierId] = useState(""); 
   const [formData, setFormData] = useState({});
   const [parentSKUs, setParentSKUs] = useState([]);
@@ -58,9 +60,12 @@ function Item() {
   const [searchTermSellerSKU, setSearchTermSellerSKU] = useState("");
   const [searchTermSKUCode, setSearchTermSKUCode] = useState("");
   const [searchTermImg, setSearchTermImg] = useState("");
+  const [searchTermSupplier, setSearchTermSupplier] = useState("");
+
 
   const filteredData = apiData.filter(item => {
     return (
+      (!searchTermSupplier || (item.supplier[0].supplierName && item.supplier[0].supplierName.toLowerCase().includes(searchTermSupplier.toLowerCase()))) &&
       (!searchTermDescription || (item.description && item.description.toLowerCase().includes(searchTermDescription.toLowerCase()))) &&
       (!searchTermPackOf || (item.packOf && item.packOf.toLowerCase().includes(searchTermPackOf.toLowerCase()))) &&
       (!searchTermGroup1 || (item.group1 && item.group1.toLowerCase().includes(searchTermGroup1.toLowerCase()))) &&
@@ -69,6 +74,7 @@ function Item() {
       (!searchTermSizeRange || (item.sizeRange && item.sizeRange.toLowerCase().includes(searchTermSizeRange.toLowerCase()))) &&
       (!searchTermSize || (item.size && item.size.toString().toLowerCase().includes(searchTermSize.toLowerCase()))) &&
       (!searchTermUnit || (item.unit && item.unit.toLowerCase().includes(searchTermUnit.toLowerCase()))) &&
+      (!searchTermParentSKU || (item.parentSKU && item.parentSKU.toLowerCase().includes(searchTermParentSKU.toLowerCase()))) &&
       (!searchTermBarcode || (item.barcode && item.barcode.toLowerCase().includes(searchTermBarcode.toLowerCase()))) &&
       (!searchTermSellingPrice || (item.sellingPrice && item.sellingPrice.toString().toLowerCase().includes(searchTermSellingPrice.toLowerCase()))) &&
       (!searchTermMRP || (item.mrp && item.mrp.toString().toLowerCase().includes(searchTermMRP.toLowerCase()))) &&
@@ -77,15 +83,11 @@ function Item() {
       (searchTermImg === null || searchTermImg === '' || (item.img && item.img.toLowerCase().includes(searchTermImg.toLowerCase())))
     );
   });
-  
-  
-  
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    if (form.checkValidity() === false || !barcode || !description || !group1 || !group2 || !group3 || !mrp ||!packOf ||!sellerSKUCode
-     ||!sellingPrice ||!size ||!sizeRange || !skucode || !unit || !Supplier) {
+    if (form.checkValidity() === false || !description || !skucode) {
       event.stopPropagation();
       setValidated(true); 
       return;
@@ -94,8 +96,7 @@ function Item() {
     if (form.checkValidity() === false) {
       event.stopPropagation();
     } else {
-      const formData = {
-        supplierId,
+      let formData = {
         skucode,
         description,
         packOf,
@@ -110,12 +111,20 @@ function Item() {
         sellingPrice,
         mrp,
         sellerSKUCode,
-        img
+        img,
       };
+
+      // Include suppliers only if the suppliers array is not empty
+      if (suppliers.length > 0) {
+        formData.suppliers = suppliers;
+      } else {
+        // If suppliers array is empty, include an empty array
+        formData.suppliers = [];
+      }
 
       console.log(formData)
 
-      axios.post('http://localhost:8080/items/' + supplierId, formData)
+      axios.post('http://localhost:8080/item/supplier', formData)
         .then(response => {
           console.log('POST request successful:', response);
           setValidated(false);
@@ -127,7 +136,7 @@ function Item() {
           setGroup3(""); 
           setMRP(""); 
           setPackof(""); 
-          setParentSKU(null); 
+          setParentSKU(""); 
           setSellerSKUcode(""); 
           setSellingPrice(""); 
           setSize(""); 
@@ -136,14 +145,18 @@ function Item() {
           setUnit(""); 
           setSupplier("");    
           setImg("");
+          setSuppliers([]); // Reset suppliers list to an empty array
+          console.log('Suppliers reset to empty array:', suppliers);
         
         })
         .catch(error => {
           console.error('Error sending POST request:', error);
         });
     }
-  
-  };
+};
+
+
+
 
   useEffect(() => {
     // Fetch initial data
@@ -153,13 +166,13 @@ function Item() {
   const fetchData = () => {
     axios.get('http://localhost:8080/supplier')
       .then(response => {
-        setSuppliers(response.data); 
+        setSuppliersList(response.data); 
       })
       .catch(error => {
         console.error('Error fetching supplier data:', error);
       });
 
-      axios.get('http://localhost:8080/items')
+      axios.get('http://localhost:8080/item/supplier')
       .then(response => {
         const filteredData = response.data.filter(item => typeof item === 'object');
         setApiData(filteredData); 
@@ -172,11 +185,18 @@ function Item() {
 
   const handleSupplierChange = (event, name) => {
     if (name) {
-      const selectedSupplier = suppliers.find(supplier => supplier.supplierName === name);
+      const selectedSupplier = suppliersList.find(supplier => supplier.supplierName === name);
       if (selectedSupplier) {
         console.log("Selected Supplier:", selectedSupplier);
         setSupplier(selectedSupplier.supplierName); // Update the selected supplier name
         setSupplierId(selectedSupplier.supplierId); // Update the supplier ID
+        
+        // Add the selected supplier to the suppliers list
+        setSuppliers(prevSuppliers => {
+          const updatedSuppliers = [...prevSuppliers, selectedSupplier];
+          console.log("Updated Suppliers:", updatedSuppliers);
+          return updatedSuppliers;
+        });
       } else {
         console.error("Supplier not found for name:", name);
         setSupplier(null); // Clear the selected supplier
@@ -189,6 +209,7 @@ function Item() {
     }
   };
   
+  
 
   const handleSKUCodeChange = (event, value1) => {
     if (value1) {
@@ -200,6 +221,10 @@ function Item() {
   };
   
   const uniqueSKUCodes = [...new Set(apiData.filter(item => item.skucode !== null).map(item => item.skucode))];
+  const uniqueGroup1 = [...new Set(apiData.filter(item => item.group1 !== null).map(item => item.group1))];
+  const uniqueGroup2  = [...new Set(apiData.filter(item => item.group2 !== null).map(item => item.group2))];
+  const uniqueGroup3  = [...new Set(apiData.filter(item => item.group3 !== null).map(item => item.group3))];
+
   const initialParentSKU = parentSKU && uniqueSKUCodes.includes(parentSKU) ? parentSKU : null;
 
   useEffect(() => {
@@ -207,8 +232,35 @@ function Item() {
   }, [apiData]);
 
   const handleRowClick = (item) => {
-    console.log("parentSKU" + item.parentSKU);
-    setSupplier(item.supplier.supplierName);
+    axios.get(`http://localhost:8080/item/supplier/${item.itemId}`)
+    .then(response => {
+        // Check if the response is successful
+        if (response.status !== 200) {
+            throw new Error('Failed to fetch supplier');
+        }
+        
+        // Extract supplier information from the response data
+        const suppliers = response.data.suppliers;
+        
+        // Find the first supplier (assuming there's only one supplier in the list)
+        const supplier = suppliers.length > 0 ? suppliers[0] : null;
+        
+        if (supplier) {
+            const { supplierName, supplierId } = supplier;
+            // Set supplier information
+            setSupplier(supplierName);
+            setSupplierId(supplierId);
+        } else {
+            // Handle case where no supplier is found
+            console.error('No supplier found for item:', item.itemId);
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching supplier:', error);
+        // Handle error
+    });
+
+    setSupplier(Supplier);
     setSKUCode(item.skucode);
     setDescription(item.description);
     setPackof(item.packOf);
@@ -229,13 +281,13 @@ function Item() {
   };
 
   const handleRowSubmit = () => {
-    console.log("handleRowSubmit triggered");
-    console.log(selectedItem)
     if (rowSelected && selectedItem) {
+      console.log(selectedItem);
       const formData = { 
+        
         // Prepare the updated item object with the changes
         ...selectedItem,
-        supplierId,
+        
         skucode,
         description,
         packOf,
@@ -253,38 +305,46 @@ function Item() {
         img
       };
 
-      console.log('form data: ', formData)
-    console.log("id: ", selectedItem.itemId)
-    axios.put(`http://localhost:8080/items/${selectedItem.itemId}`, formData)
-      .then(response => {
-        
-        console.log('PUT request successful:', response);
-        setApiData(prevData => prevData.map(item => item.itemId === selectedItem.itemId ? response.data : item)); // Update the specific item
-
-        setValidated(false);
-        setRowSelected(false);
-        setSupplier("");
-        setSKUCode("");
-        setDescription("");
-        setPackof("");
-        setParentSKU("");
-        setGroup1("");
-        setGroup2("");
-        setGroup3("");
-        setSizeRange("");
-        setSize("");
-        setUnit("");
-        setSellerSKUcode("");
-        setBarcode("");
-        setSellingPrice("");
-        setMRP("")
-        setImg("")
-      })
-      .catch(error => {
-        console.error('Error sending PUT request:', error);
-      });
-  }
+      if (suppliers.length > 0) {
+        formData.suppliers = suppliers;
+      } else {
+        // If suppliers array is empty, include an empty array
+        formData.suppliers = [];
+      }
+  
+      axios.put(`http://localhost:8080/item/supplier/${selectedItem.itemId}`, formData)
+        .then(response => {
+          console.log('PUT request successful:', response);
+          setApiData(prevData => prevData.map(item => item.itemId === selectedItem.itemId ? response.data : item)); // Update the specific item
+  
+          setValidated(false);
+          setRowSelected(false);
+          setSelectedItem(response.data); // Update selectedItem with the response data
+          // Clear form fields
+          setSupplier("");
+          setSKUCode("");
+          setDescription("");
+          setPackof("");
+          setParentSKU("");
+          setGroup1("");
+          setGroup2("");
+          setGroup3("");
+          setSizeRange("");
+          setSize("");
+          setUnit("");
+          setSellerSKUcode("");
+          setBarcode("");
+          setSellingPrice("");
+          setMRP("");
+          setImg("");
+          setSuppliers([]);
+        })
+        .catch(error => {
+          console.error('Error sending PUT request:', error);
+        });
+    }
   };
+  
   
 
   const handleFileUpload = (e) => {
@@ -347,7 +407,7 @@ function Item() {
     console.log("Deleting row with id:", id);
     // Remove the row from the table
   
-    axios.delete(`http://localhost:8080/items/${id}`)
+    axios.delete(`http://localhost:8080/item/supplier/${id}`)
     .then(response => {
       // Handle success response
       console.log('Row deleted successfully.');
@@ -388,12 +448,13 @@ function Item() {
               value={Supplier} // Change 'supplier' to 'Supplier'
             >
             <option value="">Select Supplier</option>
-            {suppliers.map((supplier) => (
+            {suppliersList.map((supplier) => (
               <option key={supplier.supplierId} value={supplier.supplierName}>
                 {supplier.supplierName}
               </option>
             ))}
           </Form.Select>
+          <Link to="/Supplier"><span style = {{float:"right", fontSize:"small", marginTop:"1%", marginRight:"1%"}}>+ add supplier</span></Link>
             <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
           </Form.Group>
 
@@ -441,54 +502,69 @@ function Item() {
         <Form.Group as={Col} md="4" controlId="validationCustom02">
           <Form.Label>ParentSKU</Form.Label> 
 
-          <Form.Select onChange={(e) => handleParentSKUChange(e)} value={parentSKU} aria-label="Choose parent SKU...">
-            <option value="">Choose parent SKU...</option>
-            {uniqueSKUCodes.map((skuCode) => (
-              <option key={skuCode} value={skuCode}>{skuCode}</option>
-            ))}
-          </Form.Select>
+          <input 
+  className='form-control'
+    list="uniqueSKUCodes" 
+    onChange={(e) => setParentSKU(e.target.value)} 
+    placeholder="Parent SKUCode" 
+    value={parentSKU} 
+  />
+  <datalist id="uniqueSKUCodes"> 
+    {uniqueSKUCodes.map((op) => (
+      <option key={op}>{op}</option> ))}
+  </datalist>
             
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
                 
         <Form.Group as={Col} md="4" controlId="validationCustom02">
-          <Form.Label>Group1</Form.Label>
-            <Form.Control
-              required
-              type="text"
-              placeholder="Group1"
-              defaultValue=""
-              value={ group1}
-              onChange={(e) => setGroup1(e.target.value)} 
-            />
-          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-        </Form.Group>
+  <Form.Label>Group1</Form.Label>
+  <input 
+  className='form-control'
+    list="uniqeGroup1" 
+    onChange={(e) => setGroup1(e.target.value)} 
+    placeholder="Group 1" 
+    value={group1} 
+  />
+  <datalist id="uniqeGroup1"> 
+    {uniqueGroup1.map((op) => (
+      <option key={op}>{op}</option> ))}
+  </datalist>
+  <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+</Form.Group>
+
       </Row>
             
       <Row className="mb-3">
         <Form.Group as={Col} md="4" controlId="validationCustom01">
           <Form.Label>Group2</Form.Label>
-            <Form.Control
-              required
-              type="text"
-              placeholder="Group2"
-              defaultValue=""
-              value={group2 }
-              onChange={(e) => setGroup2(e.target.value)} 
-            />
+          <input 
+  className='form-control'
+    list="uniqeGroup2" 
+    onChange={(e) => setGroup2(e.target.value)} 
+    placeholder="Group 2" 
+    value={group2} 
+  />
+  <datalist id="uniqeGroup2"> 
+    {uniqueGroup2.map((op) => (
+      <option key={op}>{op}</option> ))}
+  </datalist>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
                 
         <Form.Group as={Col} md="4" controlId="validationCustom02">
           <Form.Label>Group3</Form.Label>
-            <Form.Control
-              required
-              type="text"
-              placeholder="Group3"
-              defaultValue=""
-              value={ group3}
-              onChange={(e) => setGroup3(e.target.value)} 
-            />
+          <input 
+  className='form-control'
+    list="uniqeGroup3" 
+    onChange={(e) => setGroup3(e.target.value)} 
+    placeholder="Group 3" 
+    value={group3} 
+  />
+  <datalist id="uniqeGroup3"> 
+    {uniqueGroup3.map((op) => (
+      <option key={op}>{op}</option> ))}
+  </datalist>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
                 
@@ -641,6 +717,14 @@ function Item() {
         <thead>
           <tr>
             <th></th>
+            <th>Supplier
+            <span style={{ margin: '0 10px' }}><input
+                  type="text"
+                  placeholder="Search by supplier"
+                  value={searchTermSupplier}
+                  onChange={(e) => setSearchTermSupplier(e.target.value)}
+                /></span>
+            </th>
             <th>Description 
             <span style={{ margin: '0 10px' }}><input
                   type="text"
@@ -780,6 +864,21 @@ function Item() {
 </button>
 
                     </td>
+                    <td>
+    {/* Check if item.suppliers is defined and not null */}
+    {item.suppliers && item.suppliers.length > 0 ? (
+        // If item.suppliers is defined and not null and has a length greater than 0, map through each supplier
+        item.suppliers.map(supplier => (
+            // Displaying the supplierName for each supplier
+            <div key={supplier.supplierId}>{supplier.supplierName}</div>
+        ))
+    ) : (
+        // If item.suppliers is undefined, null, or has a length of 0, render an empty string
+        ''
+    )}
+</td>
+
+
               <td>{item.description}</td>
               <td>{item.packOf}</td>
               <td>{item.parentSKU}</td>

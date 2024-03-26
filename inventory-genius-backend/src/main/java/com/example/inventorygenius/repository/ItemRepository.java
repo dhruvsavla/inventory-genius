@@ -1,16 +1,24 @@
 package com.example.inventorygenius.repository;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.example.inventorygenius.entity.Item;
 
+import com.example.inventorygenius.entity.Supplier;
+
 @Repository
 public interface ItemRepository extends JpaRepository<Item, Long> {
-    Item findBySKUCode(String skuCode);
+   // Optional<Item> findBySKUCodeAndItemSuppliersSupplier(String skuCode, Supplier supplier);
 
-    Item findBySellerSKUCodeAndSupplier_supplierName(String sellerSKUCode, String supplierName);
-
-    Item findBySellerSKUCodeAndDescription(String supplierSkuCode, String description);
+   Item findBySuppliers_SupplierIdAndSellerSKUCode(Long supplierId, String sellerSKUCode);
+   List<Item> findBySuppliersSupplierId(Long supplierId);
+   Item findBySellerSKUCodeAndDescriptionContaining(String sellerSKUCode, String description);
+   Item findBySellerSKUCode(String sellerSKUCode);
+   Item findByDescriptionContaining(String description);
+   Item findBySKUCode(String sKUCode);
 
 }

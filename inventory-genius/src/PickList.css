@@ -4,10 +4,14 @@
   
   .order-card {
     background: linear-gradient(to right, #f0f0f0, #dcdcdc); /* Modified gradient */
-    width: 100%;
-    margin-left: 5%;
-    margin-right: 5%;
-    margin-top: 2%;
+    width: 30%;
+    margin-left: 1%;
+    margin-right: 1%;
+    margin-top: 2%; 
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box;
     transition: transform 0.1s; /* Add transition for zoom effect */
 }
 
@@ -24,6 +28,7 @@
   .order-cards-container {
     display: flex; /* Enable flexbox layout for the container */
     flex-wrap: wrap; /* Allow cards to wrap onto multiple rows */
+    justify-content: space-between;
   }
   
   .button-container {

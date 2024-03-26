@@ -92,8 +92,28 @@ function PickList() {
     return pdfData;
   };
 
+  const handleSelectAll = () => {
+    // If all orders are already selected, deselect all; otherwise, select all
+    if (selectedOrders.length === orders.length) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders([...orders]);
+    }
+  };
+
   return (
     <div className="picklist-container">
+      <div className='title'>
+      <h1>PickList</h1>
+    </div>
+    <div className="select-all-checkbox">
+      <input
+        type="checkbox"
+        checked={selectedOrders.length === orders.length && orders.length !== 0}
+        onChange={handleSelectAll}
+      />
+      <label>Select All</label>
+    </div>
       <div className="order-cards-container">
       {orders.map((order, index) => (
   <label key={order.orderId} className={`order-card ${selectedOrders.some((selectedOrder) => selectedOrder.orderId === order.orderId) ? 'selected' : ''}`}>

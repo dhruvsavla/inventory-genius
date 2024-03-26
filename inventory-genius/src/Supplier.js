@@ -49,21 +49,20 @@ function Supplier() {
         const sheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        jsonData.shift();
-
         jsonData.forEach(item => {
             const formattedData = {
                 address: item.address,
                 phonel: item.phone,
                 supplierName: item.supplier_name
             };
-          console.log(formattedData)
+            console.log(formattedData);
             postData(formattedData);
         });
     };
 
     reader.readAsBinaryString(file);
 };
+
 
 const handleSubmit = (event) => {
   event.preventDefault();

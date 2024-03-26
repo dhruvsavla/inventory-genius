@@ -57,7 +57,7 @@ public class StorageService {
 
     public Storage updateStorage(Long id, Storage storageDetails) {
         Storage storage = storageRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("BOM not found with id: " + id));
+                .orElseThrow(() -> new NoSuchElementException("Storage not found with id: " + id));
 
                 storage.setBinNumber(storageDetails.getBinNumber());
                 storage.setRackNumber(storageDetails.getRackNumber());

@@ -2,7 +2,9 @@ package com.example.inventorygenius.entity;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
@@ -26,7 +28,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "itemId")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "itemId")
 @Table(name = "items")
 public class Item {
 
@@ -88,9 +90,9 @@ public class Item {
     @JsonIgnore
     private List<Bom> boms = new ArrayList<>();
 
-    @ManyToOne()
-    @JoinColumn(name = "supplier_id")
-    private Supplier supplier;
+    // @ManyToOne(fetch = FetchType.EAGER)
+    // @JoinColumn(name = "supplier_id")
+    // private Supplier supplier;
 
     @ManyToOne()
     @JoinColumn(name = "storage_id")
@@ -102,6 +104,20 @@ public class Item {
      @OneToOne
     @JoinColumn(name = "return_id")
     private Return order;
+
+
+    
+    @ManyToMany()
+   // @JsonBackReference
+    @JoinTable(name = "item_supplier_table", 
+    joinColumns = {
+        @JoinColumn(name = "item_id", referencedColumnName = "item_id")
+    },
+    inverseJoinColumns = {
+        @JoinColumn(name = "supplier_id", referencedColumnName = "supplier_id")
+    })
+    
+    private List<Supplier> suppliers = new ArrayList<>();
 
     public Item() {
 
@@ -296,12 +312,29 @@ public class Item {
         this.stockEntries = stockEntries;
     }
 
-    public Supplier getSupplier() {
-        return supplier;
+    //@JsonBackReference
+    public List<Supplier> getSuppliers() {
+        return suppliers;
     }
 
-    public void setSupplier(Supplier supplier) {
-        this.supplier = supplier;
+    public void setSuppliers(List<Supplier> suppliers) {
+        this.suppliers = suppliers;
     }
+
+   
+
+   
+
+    // @JsonBackReference 
+    // public Supplier getSupplier() {
+        
+    //     return supplier;
+    // }
+
+    // public void setSupplier(Supplier supplier) {
+    //     this.supplier = supplier;
+    // }
+
+   
 
 }

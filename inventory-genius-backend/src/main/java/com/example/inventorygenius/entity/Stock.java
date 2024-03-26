@@ -1,13 +1,17 @@
 package com.example.inventorygenius.entity;
 
 import java.util.Date;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -34,6 +38,14 @@ public class Stock {
     @ManyToOne
     @JoinColumn(name = "item_id")
     private Item item;
+
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "stock_stock_inward",
+            joinColumns = @JoinColumn(name = "stock_id"),
+            inverseJoinColumns = @JoinColumn(name = "stock_inward_id")
+    )
+    private List<StockInward> stockInwards;
 
     public Stock() {
 
@@ -93,6 +105,14 @@ public class Stock {
 
     public void setItem(Item item) {
         this.item = item;
+    }
+
+    public List<StockInward> getStockInwards() {
+        return stockInwards;
+    }
+
+    public void setStockInwards(List<StockInward> stockInwards) {
+        this.stockInwards = stockInwards;
     }
 
 }

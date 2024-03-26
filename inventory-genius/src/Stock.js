@@ -35,6 +35,16 @@ function Stock() {
   const [searchTermAdd, setSearchTermAdd] = useState("");
   const [searchTermSub, setSearchTermSub] = useState("");
 
+  useEffect(() => {
+    const currentDate = new Date(); // Get current date
+    const year = currentDate.getFullYear(); // Get current year
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Get current month and pad with leading zero if needed
+    const day = String(currentDate.getDate() + 1).padStart(2, '0'); // Get current day and pad with leading zero if needed
+    const formattedDate = `${year}-${month}-${day}`; // Format date as YYYY-MM-DD
+    setDate(formattedDate); // Set the default date state
+    
+  }, []);
+
   const filteredData = apiData.filter(supplier => {
     return (
       supplier.date.toString().toLowerCase().includes(searchTermDate.toLowerCase()) && // Convert to string
@@ -79,7 +89,7 @@ const handleSubmit = (event) => {
     event.stopPropagation();
   } else {
     // Fetch item based on supplier and supplier SKU code
-    axios.get(`http://localhost:8080/items/${skucode}`)
+    axios.get(`http://localhost:8080/item/supplier/search/skucode/${skucode}`)
       .then(response => {
         if (response.data) {
           const item = response.data;
@@ -165,7 +175,7 @@ useEffect(() => {
     .then(response => setApiData(response.data))
     .catch(error => console.error(error));
     console.log(apiData)
-    axios.get('http://localhost:8080/items') // Fetch SKU codes and descriptions from the items table
+    axios.get('http://localhost:8080/item/supplier') // Fetch SKU codes and descriptions from the items table
     .then(response => {
       // Extract SKU codes and descriptions from the response data and filter out null or undefined values
       const skuData = response.data

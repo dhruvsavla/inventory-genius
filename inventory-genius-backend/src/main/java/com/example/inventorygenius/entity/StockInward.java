@@ -1,6 +1,7 @@
 package com.example.inventorygenius.entity;
 
 import java.util.Date;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
@@ -31,6 +33,9 @@ public class StockInward {
     @ManyToOne
     @JoinColumn(name = "item_id")
     private Item item;
+
+    @ManyToMany(mappedBy = "stockInwards")
+    private List<Stock> stocks;
 
     public StockInward() {
 
@@ -81,6 +86,14 @@ public class StockInward {
 
     public void setQty(int qty) {
         this.qty = qty;
+    }
+
+    public List<Stock> getStocks() {
+        return stocks;
+    }
+
+    public void setStocks(List<Stock> stocks) {
+        this.stocks = stocks;
     }
 
 }

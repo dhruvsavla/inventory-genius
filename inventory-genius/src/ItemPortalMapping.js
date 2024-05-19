@@ -49,10 +49,10 @@ function ItemPortalMapping() {
 
     const filteredData = apiData.filter(supplier => {
       return (
-        supplier.portal.toLowerCase().includes(searchTermPortal.toLowerCase()) &&
+        (supplier.portal && supplier.portal.toLowerCase().includes(searchTermPortal.toLowerCase())) &&
         //supplier.supplier.toLowerCase().includes(searchTermSupplier.toLowerCase()) &&
-        supplier.portalSkuCode.toLowerCase().includes(searchTermPortalSKU.toLowerCase()) &&
-        supplier.sellerSkuCode.toLowerCase().includes(searchTermSellerSKU.toLowerCase())
+        (supplier.portalSkuCode && supplier.portalSkuCode.toLowerCase().includes(searchTermPortalSKU.toLowerCase())) &&
+        (supplier.sellerSkuCode && supplier.sellerSkuCode.toLowerCase().includes(searchTermSellerSKU.toLowerCase()))
       );
     });
 

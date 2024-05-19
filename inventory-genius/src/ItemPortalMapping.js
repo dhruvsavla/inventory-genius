@@ -524,10 +524,10 @@ const handleSupplierChange = (event, name) => {
 </button>
 
                     </td>
-                  <td>{ipm.portal}</td>
-                  <td>{ipm.portalSkuCode}</td>
-                  <td>{ipm.supplier.supplierName}</td>
-                  <td>{ipm.sellerSkuCode}</td>
+                  <td>{ipm.portal || ''}</td>
+                  <td>{ipm.portalSkuCode || ''}</td>
+                  <td>{ipm.supplier.supplierName || ''}</td>
+                  <td>{ipm.sellerSkuCode || ''}</td>
                 </tr>
               ))}
             </tbody>

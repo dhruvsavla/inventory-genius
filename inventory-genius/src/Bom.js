@@ -21,6 +21,7 @@ import { Link } from 'react-router-dom';
 import { IoIosRefresh } from "react-icons/io";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Pagination from 'react-bootstrap/Pagination';
 
 function Bom() {
   const [validated, setValidated] = useState(false);
@@ -36,6 +37,8 @@ function Bom() {
   const [bomItemSearchTerm, setBomItemSearchTerm] = useState("");
   const [qtySearchTerm, setQtySearchTerm] = useState("");
   const [isRotating, setIsRotating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const handleRefresh = () => {
     fetchData();
@@ -52,6 +55,12 @@ function Bom() {
       (supplier.skucode && supplier.skucode.toLowerCase().includes(skuSearchTerm.toLowerCase()))
     );
   });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
   
   const fetchData = () => {
     axios.get('http://localhost:8080/item/supplier') // Fetch SKU codes and descriptions from the items table
@@ -444,7 +453,7 @@ const handleDelete = (id) => {
               </tr>
             </thead>
             <tbody>
-  {filteredData.map(bom => (
+  {currentItems.map(bom => (
     <tr key={bom.bomId} onClick={() => handleRowClick(bom)}>
       <td style={{ width: '50px', textAlign: 'center' }}>
                       
@@ -468,6 +477,13 @@ const handleDelete = (id) => {
 </tbody>
 
           </Table>
+          <Pagination>
+            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
         </AccordionDetails>
       </Accordion>
     </div>

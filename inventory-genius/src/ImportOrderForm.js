@@ -19,6 +19,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Pagination from 'react-bootstrap/Pagination';
 
 function ImportOrderForm() {
   const [validated, setValidated] = useState(false);
@@ -61,6 +62,8 @@ function ImportOrderForm() {
   const [filteredSellerSKUList, setFilteredSellerSKUList] = useState([]); // State variable for filtered seller SKU list
   const [filteredItemDescriptionList, setFilteredItemDescriptionList] = useState([]); // State variable for filtered item description list
   const [portalMapping, setPortalMapping] = useState([]); // State variable to store portal mapping data
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const formatDateOrderNo = (date) => {
     const year = date.getFullYear();
@@ -146,8 +149,13 @@ function ImportOrderForm() {
     (item.productDescription && item.productDescription.toString().toLowerCase().includes(searchTermProductDescription.toLowerCase())) ||
     (item.portal && item.portal.toString().toLowerCase().includes(searchTermPortal.toLowerCase())) &&
     (searchTermCancel === null || searchTermCancel === '' || (item.cancel && item.cancel.toString().toLowerCase().includes(searchTermCancel.toLowerCase())))
-
   );
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
   
   console.log("filteredData:", filteredData);  
 
@@ -801,7 +809,7 @@ const handleDelete = (id) => {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map(order => (
+              {currentItems.map(order => (
                 <tr key={order.orderId} onClick={() => handleRowClick(order)}>
                   <td style={{ width: '50px', textAlign: 'center' }}>
                       
@@ -850,6 +858,13 @@ const handleDelete = (id) => {
               ))}
             </tbody>
           </Table>
+          <Pagination>
+            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
           </div>
         </AccordionDetails>
       </Accordion>

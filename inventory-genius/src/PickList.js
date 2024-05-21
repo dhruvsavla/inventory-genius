@@ -14,6 +14,7 @@ import html2canvas from 'html2canvas';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MyTable from './MyTable.js';
 import 'jspdf-autotable';
+import Pagination from 'react-bootstrap/Pagination';
 
 const PicklistComponent = () => {
   const [apiData, setApiData] = useState([]);
@@ -24,6 +25,8 @@ const PicklistComponent = () => {
   const [mergedOrderData, setMergedOrderData] = useState();
   const [mergedPicklistData, setMergedPicklistData] = useState([]); 
   const [selectedOrderData, setSelectedOrderData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   useEffect (() => {
     axios.get('http://localhost:8080/picklists/orderData')
@@ -56,6 +59,11 @@ const PicklistComponent = () => {
       });
   }, []);
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = picklistData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleCheckboxChange = (event, orderNo) => {
     console.log("in handle");
@@ -487,7 +495,13 @@ const formatDate = (dateString) => {
   </tbody>
 </Table>
 
-
+<Pagination>
+            {Array.from({ length: Math.ceil(picklistData.length / itemsPerPage) }).map((_, index) => (
+              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
 
       </AccordionDetails>
       </Accordion>

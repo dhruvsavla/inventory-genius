@@ -40,12 +40,13 @@ public class ItemPortalMapping {
     }
 
     public ItemPortalMapping(Long id, String portal, String sellerSkuCode, String portalSkuCode,
-            Item item) {
+            Item item, Supplier supplier) {
         this.id = id;
         this.portal = portal;
         this.sellerSkuCode = sellerSkuCode;
         this.portalSkuCode = portalSkuCode;
         this.item = item;
+        this.supplier = supplier;
     }
 
     public Long getId() {

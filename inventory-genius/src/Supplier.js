@@ -19,6 +19,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { saveAs } from 'file-saver';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Pagination from 'react-bootstrap/Pagination';
 
 function Supplier() {
   const [validated, setValidated] = useState(false);
@@ -31,6 +32,8 @@ function Supplier() {
   const [searchTermName, setSearchTermName] = useState('');
   const [searchTermAddress, setSearchTermAddress] = useState('');
   const [searchTermPhone, setSearchTermPhone] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // Filter the apiData based on the searchTerm
   const filteredData = apiData.filter(supplier => {
@@ -40,6 +43,12 @@ function Supplier() {
       (supplier.phonel && supplier.phonel.toLowerCase().includes(searchTermPhone.toLowerCase()))
     );
   });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
   
 
   const handleFileUpload = (e) => {
@@ -261,7 +270,7 @@ return (
             />
       <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
     </Form.Group>
-    <Form.Group as={Col} md="4" controlId="validationCustom01">
+    <Form.Group as={Col} md="4" controlId="validationCustom03">
       <Form.Label>Phone</Form.Label>
       <Form.Control
               required
@@ -277,9 +286,9 @@ return (
   </Row>
   <div className='buttons'>
   {rowSelected ? (
-    <Button onClick={handleRowSubmit}>Edit</Button>
+    <Button id = "edit" onClick={handleRowSubmit}>Edit</Button>
   ) : (
-    <Button type="submit" onClick={handleSubmit}>Submit</Button>
+    <Button id = "submit" type="submit" onClick={handleSubmit}>Submit</Button>
   )}
   <span style={{ margin: '0 10px' }}>or</span>
           <input type="file" onChange={handleFileUpload} />
@@ -295,12 +304,12 @@ return (
       <AccordionSummary
         expandIcon={<ExpandMoreIcon />}
         aria-controls="panel3-content"
-        id="panel3-header"
+        id="panel-header"
         sx={{ backgroundColor: '#E5E7E9' }} 
       >
         <h4>List View of Suppliers</h4>
       </AccordionSummary>
-      <AccordionDetails>
+      <AccordionDetails id='accoordion_expand'>
       <div style={{ overflowX: 'auto' }}> 
       <Table striped bordered hover>
           <thead>
@@ -335,7 +344,7 @@ return (
             </tr>
           </thead>
           <tbody>
-            {filteredData.map(supplier => (
+            {currentItems.map(supplier => (
               <tr key={supplier.supplierId} onClick={() => handleRowClick(supplier)}>
                   <td style={{ width: '50px', textAlign: 'center' }}>
                     
@@ -358,8 +367,16 @@ onClick={(e) => {
               </tr>
             ))}
           </tbody>
-        
+
+          
         </Table>
+        <Pagination>
+            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
         </div>
       </AccordionDetails>
     </Accordion>

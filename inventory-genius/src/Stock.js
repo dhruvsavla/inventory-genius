@@ -18,6 +18,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { saveAs } from 'file-saver';
+import Pagination from 'react-bootstrap/Pagination';
 
 function Stock() {
   const [validated, setValidated] = useState(false);
@@ -41,6 +42,8 @@ function Stock() {
   const [searchTermMsg, setSearchTermMsg] = useState("");
   const [searchTermNumber, setSearchTermNumber] = useState("");
   const [itemImg, setItemImg] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   useEffect(() => {
     const currentDate = new Date(); // Get current date
@@ -64,6 +67,12 @@ function Stock() {
       (searchTermNumber === null || searchTermNumber === '' || (supplier.number && supplier.number.toLowerCase().includes(searchTermNumber.toLowerCase())))
     );
   });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -463,20 +472,20 @@ const getImg = (skucode) => {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map(stock => (
+              {currentItems.map(stock => (
                 <tr key={stock.stockId} onClick={() => handleRowClick(stock)}>
                   <td style={{ width: '50px', textAlign: 'center' }}>
                       
                   <button
-  style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
-  className="delete-icon"
-  onClick={(e) => {
-    e.stopPropagation(); // Stop propagation of the click event
-    handleDelete(stock.stockId); // Call handleDelete function
-  }}
->
-  <DeleteIcon style={{ color: '#F00' }} />
-</button>
+                    style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
+                    className="delete-icon"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Stop propagation of the click event
+                      handleDelete(stock.stockId); // Call handleDelete function
+                    }}
+                  >
+                    <DeleteIcon style={{ color: '#F00' }} />
+                  </button>
 
                   </td>
                   <td>
@@ -498,6 +507,15 @@ const getImg = (skucode) => {
               ))}
             </tbody>
           </Table>
+
+          <Pagination>
+            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
+
         </AccordionDetails>
       </Accordion>
                 

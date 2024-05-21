@@ -20,6 +20,7 @@ import { Link } from 'react-router-dom';
 import { IoIosRefresh } from "react-icons/io";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Pagination from 'react-bootstrap/Pagination';
 
 function ItemPortalMapping() {
     const [validated, setValidated] = useState(false);
@@ -38,6 +39,8 @@ function ItemPortalMapping() {
     const [searchTermPortalSKU, setSearchTermPortalSKU] = useState('');
     const [isRotating, setIsRotating] = useState(false);
     const [sellerSKUList, setSellerSKUList] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
 
     const handleRefresh = () => {
       fetchData();
@@ -50,11 +53,17 @@ function ItemPortalMapping() {
     const filteredData = apiData.filter(supplier => {
       return (
         (supplier.portal && supplier.portal.toLowerCase().includes(searchTermPortal.toLowerCase())) &&
-        //supplier.supplier.toLowerCase().includes(searchTermSupplier.toLowerCase()) &&
+        (supplier.supplier && supplier.supplier.supplierName.toLowerCase().includes(searchTermSupplier.toLowerCase())) &&
         (supplier.portalSkuCode && supplier.portalSkuCode.toLowerCase().includes(searchTermPortalSKU.toLowerCase())) &&
         (supplier.sellerSkuCode && supplier.sellerSkuCode.toLowerCase().includes(searchTermSellerSKU.toLowerCase()))
       );
     });
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     const formatPortal = (portal) => {
       // Split the portal string by space
@@ -508,30 +517,37 @@ const handleSupplierChange = (event, name) => {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map(ipm => (
+              {currentItems.map(ipm => (
                 <tr key={ipm.id} onClick={() => handleRowClick(ipm)}>
                   <td style={{ width: '50px', textAlign: 'center' }}>
                       
                   <button
-  style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
-  className="delete-icon"
-  onClick={(e) => {
-    e.stopPropagation(); // Stop propagation of the click event
-    handleDelete(ipm.id); // Call handleDelete function
-  }}
->
-  <DeleteIcon style={{ color: '#F00' }} />
-</button>
+                    style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
+                    className="delete-icon"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Stop propagation of the click event
+                      handleDelete(ipm.id); // Call handleDelete function
+                    }}
+                  >
+                    <DeleteIcon style={{ color: '#F00' }} />
+                  </button>
 
                     </td>
-                  <td>{ipm.portal || ''}</td>
-                  <td>{ipm.portalSkuCode || ''}</td>
-                  <td>{ipm.supplier.supplierName || ''}</td>
-                  <td>{ipm.sellerSkuCode || ''}</td>
+                  <td>{ipm.portal ? ipm.portal : ''}</td>
+                  <td>{ipm.portalSkuCode ? ipm.portalSkuCode : ''}</td>
+                  <td>{ipm.supplier ? ipm.supplier.supplierName : ''}</td>
+                  <td>{ipm.sellerSkuCode ? ipm.sellerSkuCode : ''}</td>
                 </tr>
               ))}
             </tbody>
           </Table>
+          <Pagination>
+            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
         </AccordionDetails>
       </Accordion>
             </div>

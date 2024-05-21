@@ -21,6 +21,7 @@ import { IoIosRefresh } from "react-icons/io";
 import { saveAs } from 'file-saver';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Pagination from 'react-bootstrap/Pagination';
 
 function Item() {
   const [validated, setValidated] = useState(false);
@@ -66,10 +67,12 @@ function Item() {
   const [searchTermImg, setSearchTermImg] = useState("");
   const [searchTermSupplier, setSearchTermSupplier] = useState("");
   const [isRotating, setIsRotating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
   const filteredData = apiData.filter(item => {
     return (
-      (!searchTermSupplier || (item.supplier[0].supplierName && item.supplier[0].supplierName.toLowerCase().includes(searchTermSupplier.toLowerCase()))) &&
+      (!searchTermSupplier || (item.suppliers && item.suppliers.length > 0 && item.suppliers[0].supplierName && item.suppliers[0].supplierName.toLowerCase().includes(searchTermSupplier.toLowerCase()))) &&
       (!searchTermDescription || (item.description && item.description.toLowerCase().includes(searchTermDescription.toLowerCase()))) &&
       (!searchTermPackOf || (item.packOf && item.packOf.toLowerCase().includes(searchTermPackOf.toLowerCase()))) &&
       (!searchTermGroup1 || (item.group1 && item.group1.toLowerCase().includes(searchTermGroup1.toLowerCase()))) &&
@@ -87,6 +90,13 @@ function Item() {
       (searchTermImg === null || searchTermImg === '' || (item.img && item.img.toLowerCase().includes(searchTermImg.toLowerCase())))
     );
   });
+  
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -207,7 +217,7 @@ const handleRefresh = () => {
         console.log("Selected Supplier:", selectedSupplier);
         setSupplier(selectedSupplier.supplierName); // Update the selected supplier name
         setSupplierId(selectedSupplier.supplierId); // Update the supplier ID
-        
+  
         // Add the selected supplier to the suppliers list
         setSuppliers(prevSuppliers => {
           const updatedSuppliers = [selectedSupplier];
@@ -218,13 +228,16 @@ const handleRefresh = () => {
         console.error("Supplier not found for name:", name);
         setSupplier(null); // Clear the selected supplier
         setSupplierId(""); // Clear the supplierId
+        setSuppliers([]); // Reset suppliers to an empty array if no supplier is found
       }
     } else {
       // Handle case when no value is selected
       setSupplier(null); // Clear the selected supplier
       setSupplierId(""); // Clear the supplierId
+      setSuppliers([]); // Reset suppliers to an empty array if no value is selected
     }
   };
+  
   
   
 
@@ -252,10 +265,10 @@ const handleRefresh = () => {
 
   const handleRowClick = (item) => {
     axios.get(`http://localhost:8080/item/supplier/${item.itemId}`)
-    .then(response => {
+      .then(response => {
         // Check if the response is successful
         if (response.status !== 200) {
-            throw new Error('Failed to fetch supplier');
+          throw new Error('Failed to fetch supplier');
         }
         
         // Extract supplier information from the response data
@@ -265,20 +278,23 @@ const handleRefresh = () => {
         const supplier = suppliers.length > 0 ? suppliers[0] : null;
         
         if (supplier) {
-            const { supplierName, supplierId } = supplier;
-            // Set supplier information
-            setSupplier(supplierName);
-            setSupplierId(supplierId);
+          const { supplierName, supplierId } = supplier;
+          // Set supplier information
+          setSupplier(supplierName);
+          setSupplierId(supplierId);
         } else {
-            // Handle case where no supplier is found
-            console.error('No supplier found for item:', item.itemId);
+          // Handle case where no supplier is found
+          console.error('No supplier found for item:', item.itemId);
         }
-    })
-    .catch(error => {
+  
+        // Set the suppliers state with the response data
+        setSuppliers(suppliers);
+      })
+      .catch(error => {
         console.error('Error fetching supplier:', error);
         // Handle error
-    });
-
+      });
+  
     setSupplier(Supplier);
     setSKUCode(item.skucode);
     setDescription(item.description);
@@ -298,6 +314,7 @@ const handleRefresh = () => {
     setRowSelected(true);
     setSelectedItem(item);
   };
+  
 
   const handleRowSubmit = () => {
     if (rowSelected && selectedItem) {
@@ -325,7 +342,7 @@ const handleRefresh = () => {
         mrp,
         sellerSKUCode,
         img,
-        suppliers: suppliers // Set suppliers to an empty array if it's null or undefined
+        suppliers: suppliers.length > 0 ? suppliers : currentSuppliers // Ensure suppliers are included correctly
       };
   
       console.log(formData);
@@ -363,8 +380,6 @@ const handleRefresh = () => {
           setSellingPrice("");
           setMRP("");
           setImg("");
-          
-          
   
         })
         .catch((error) => {
@@ -932,56 +947,63 @@ const postData = (data) => {
           </tr>
         </thead>
         <tbody>
-          {filteredData.map(item => (
+          {currentItems.map(item => (
             <tr key={item.itemId} onClick={() => handleRowClick(item)}> 
             <td style={{ width: '50px', textAlign: 'center' }}>
                       
             <button
-  style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
-  className="delete-icon"
-  onClick={(e) => {
-    e.stopPropagation(); // Stop propagation of the click event
-    handleDelete(item.itemId); // Call handleDelete function
-  }}
->
-  <DeleteIcon style={{ color: '#F00' }} />
-</button>
+              style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
+              className="delete-icon"
+              onClick={(e) => {
+                e.stopPropagation(); // Stop propagation of the click event
+                handleDelete(item.itemId); // Call handleDelete function
+              }}
+            >
+              <DeleteIcon style={{ color: '#F00' }} />
+            </button>
 
                     </td>
-                    <td>
-    {/* Check if item.suppliers is defined and not null */}
-    {item.suppliers && item.suppliers.length > 0 ? (
-        // If item.suppliers is defined and not null and has a length greater than 0, map through each supplier
-        item.suppliers.map(supplier => (
-            // Displaying the supplierName for each supplier
-            <div key={supplier.supplierId}>{supplier.supplierName}</div>
-        ))
-    ) : (
-        // If item.suppliers is undefined, null, or has a length of 0, render an empty string
-        ''
-    )}
-</td>
+              <td>
+                  {/* Check if item.suppliers is defined and not null */}
+                  {item.suppliers && item.suppliers.length > 0 ? (
+                      // If item.suppliers is defined and not null and has a length greater than 0, map through each supplier
+                      item.suppliers.map(supplier => (
+                          // Displaying the supplierName for each supplier
+                          <div key={supplier.supplierId}>{supplier.supplierName}</div>
+                      ))
+                  ) : (
+                      // If item.suppliers is undefined, null, or has a length of 0, render an empty string
+                      ''
+                  )}
+              </td>
 
-              <td>{item.skucode}</td>
-              <td>{item.description}</td>
-              <td>{item.packOf}</td>
-              <td>{item.parentSKU}</td>
-              <td>{item.group1}</td>
-              <td>{item.group2}</td>
-              <td>{item.group3}</td>
-              <td>{item.sizeRange}</td>
-              <td>{item.size}</td>
-              <td>{item.unit}</td>
-              <td>{item.sellerSKUCode}</td>
-              <td>{item.barcode}</td>
-              <td>{item.sellingPrice}</td>
-              <td>{item.mrp}</td>
+              <td>{item.skucode ? item.skucode : ''}</td>
+              <td>{item.description ? item.description : ''}</td>
+              <td>{item.packOf ? item.packOf : ''}</td>
+              <td>{item.parentSKU ? item.parentSKU : ''}</td>
+              <td>{item.group1 ? item.group1 : ''}</td>
+              <td>{item.group2 ? item.group2 : ''}</td>
+              <td>{item.group3 ? item.group3 : ''}</td>
+              <td>{item.sizeRange ? item.sizeRange : ''}</td>
+              <td>{item.size ? item.size : ''}</td>
+              <td>{item.unit ? item.unit : ''}</td>
+              <td>{item.sellerSKUCode ? item.sellerSKUCode : ''}</td>
+              <td>{item.barcode ? item.barcode : ''}</td>
+              <td>{item.sellingPrice ? item.sellingPrice : ''}</td>
+              <td>{item.mrp ? item.mrp : ''}</td>
               <td>{item.img ? item.img : ''}</td>
 
             </tr>
           ))}
         </tbody>
       </Table>
+      <Pagination>
+            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
 </div>
       )}
           </AccordionDetails>

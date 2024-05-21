@@ -52,10 +52,10 @@ function ItemPortalMapping() {
 
     const filteredData = apiData.filter(supplier => {
       return (
-        (supplier.portal && supplier.portal.toLowerCase().includes(searchTermPortal.toLowerCase())) &&
-        (supplier.supplier && supplier.supplier.supplierName.toLowerCase().includes(searchTermSupplier.toLowerCase())) &&
-        (supplier.portalSkuCode && supplier.portalSkuCode.toLowerCase().includes(searchTermPortalSKU.toLowerCase())) &&
-        (supplier.sellerSkuCode && supplier.sellerSkuCode.toLowerCase().includes(searchTermSellerSKU.toLowerCase()))
+        (!searchTermPortal || (supplier.portal && supplier.portal.toLowerCase().includes(searchTermPortal.toLowerCase()))) &&
+        (!searchTermSupplier || (supplier.supplier && supplier.supplier.supplierName.toLowerCase().includes(searchTermSupplier.toLowerCase()))) &&
+        (!searchTermPortalSKU || (supplier.portalSkuCode && supplier.portalSkuCode.toLowerCase().includes(searchTermPortalSKU.toLowerCase()))) &&
+        (!searchTermSellerSKU || (supplier.sellerSkuCode && supplier.sellerSkuCode.toLowerCase().includes(searchTermSellerSKU.toLowerCase())))
       );
     });
 
@@ -517,7 +517,7 @@ const handleSupplierChange = (event, name) => {
               </tr>
             </thead>
             <tbody>
-              {currentItems.map(ipm => (
+              {filteredData.map(ipm => (
                 <tr key={ipm.id} onClick={() => handleRowClick(ipm)}>
                   <td style={{ width: '50px', textAlign: 'center' }}>
                       

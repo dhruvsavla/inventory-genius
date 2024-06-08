@@ -606,8 +606,27 @@ const exportToExcel = () => {
       </td>
       <td>{bom.bomCode ? bom.bomCode : ''}</td>
       <td>{bom.skucode ? bom.skucode : ''}</td>
-      <td>{bom.defaultStartDate ? bom.defaultStartDate : ''}</td>
-      <td>{bom.defaultEndDate ? bom.defaultEndDate: ''}</td>
+      <td>
+  {(() => {
+    if (!bom.defaultStartDate) return '';
+    const date = new Date(bom.defaultStartDate);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  })()}
+</td>
+<td>
+  {(() => {
+    if (!bom.defaultEndDate) return '';
+    const date = new Date(bom.defaultEndDate);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  })()}
+</td>
+
     </tr>
   ))}
 </tbody>

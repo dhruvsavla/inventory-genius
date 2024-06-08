@@ -9,6 +9,9 @@ import com.example.inventorygenius.entity.Bom;
 import com.example.inventorygenius.service.BomService;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
@@ -41,4 +44,11 @@ public class BomController {
         System.out.println("deleted");
         bomService.deleteBomById(id);
     }
+
+    @GetMapping("/bom/{bomCode}")
+    public ResponseEntity<Bom> getBomBySKUCode(@PathVariable String bomCode) {
+        Bom bom = bomService.getBomByBomCode(bomCode);
+        return ResponseEntity.ok(bom);
+    }
+    
 }

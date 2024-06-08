@@ -20,6 +20,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Pagination from 'react-bootstrap/Pagination';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { saveAs } from 'file-saver';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 function ImportOrderForm() {
   const [validated, setValidated] = useState(false);
@@ -43,7 +47,11 @@ function ImportOrderForm() {
   const [sellerSKUList, setSellerSKUList] = useState([]);
   const [itemDescriptionList, setItemDescriptionList] = useState([]);
   const [portalNameList, setPortalNameList] = useState([]);
+  const [orderStatus, setOrderStatus] = useState("");
+  const [awbNo, setAwbNo] = useState("");
 
+  const [searchTermAwbNo, setSearchTermAwbNo] = useState('')
+  const [searchTermOrderStatus, setSearchTermOrderStatus] = useState('');
   const [searchTermDate, setSearchTermDate] = useState('');
   const [searchTermCancel, setSearchTermCancel] = useState('');
   const [searchTermOrderNo, setSearchTermOrderNo] = useState('');
@@ -64,7 +72,27 @@ function ImportOrderForm() {
   const [portalMapping, setPortalMapping] = useState([]); // State variable to store portal mapping data
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const rowsPerPageOptions = [5, 10, 20];
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
+  // Function to handle change in items per page
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+  
+  // JSX for the dropdown menu to select rows per page
+  const rowsPerPageDropdown = (
+    <Form.Group controlId="itemsPerPageSelect">
+      <Form.Select style={{ marginLeft: "5px", width : "70px"}} value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        {rowsPerPageOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Select>
+    </Form.Group>
+  );
   const formatDateOrderNo = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -148,8 +176,30 @@ function ImportOrderForm() {
     (item.portalSKU && item.portalSKU.toString().toLowerCase().includes(searchTermPortalSKU.toLowerCase())) ||
     (item.productDescription && item.productDescription.toString().toLowerCase().includes(searchTermProductDescription.toLowerCase())) ||
     (item.portal && item.portal.toString().toLowerCase().includes(searchTermPortal.toLowerCase())) &&
-    (searchTermCancel === null || searchTermCancel === '' || (item.cancel && item.cancel.toString().toLowerCase().includes(searchTermCancel.toLowerCase())))
+    (searchTermCancel === null || searchTermCancel === '' || (item.cancel && item.cancel.toString().toLowerCase().includes(searchTermCancel.toLowerCase()))) &&
+    (searchTermOrderStatus === null || searchTermOrderStatus === '' || (item.orderStatus && item.orderStatus.toString().toLowerCase().includes(searchTermOrderStatus.toLowerCase()))) &&
+    (searchTermAwbNo === null || searchTermAwbNo === '' || (item.awbNo && item.awbNo.toString().toLowerCase().includes(searchTermAwbNo.toLowerCase())))
+
   );
+
+  const sortedData = filteredData.sort((a, b) => {
+    if (sortConfig.key) {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+      return 0;
+    }
+    return filteredData;
+  });
+
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -219,6 +269,8 @@ const handleSubmit = (event) => {
             sellerSKU,
             qty,
             cancel,
+            awbNo,
+            orderStatus: "Order Recieved",
             items: itemsArray
           };
           console.log("out item get");
@@ -247,6 +299,8 @@ const handleSubmit = (event) => {
               setPortalSKU("")
               setSelectedPortal("");
               setCancel("");
+              setAwbNo("");
+              setOrderStatus("");
               // Keep other state variables as they are
             })
             .catch(error => {
@@ -283,7 +337,8 @@ const handleRowSubmit = () => {
       portal,
       sellerSKU,
       qty,
-      cancel
+      cancel,
+      awbNo
     };
     console.log('form data: ', formData)
     console.log("id: ", selectedItem.orderId)
@@ -312,6 +367,7 @@ const handleRowSubmit = () => {
         setSellerSKU("");
         setShipbyDate("");
         setCancel("");
+        setAwbNo("");
       })
       .catch(error => {
         console.error('Error sending PUT request:', error);
@@ -319,7 +375,6 @@ const handleRowSubmit = () => {
       });
   }
 };
-
 
 
 const handleRowClick = (order) => {
@@ -338,8 +393,11 @@ const handleRowClick = (order) => {
   setSellerSKU(order.sellerSKU);
   setShipbyDate(order.shipByDate);
   setCancel(order.cancel);
+  setAwbNo(order.awbNo);
+  setOrderStatus(order.orderStatus);
   setRowSelected(true);
   setSelectedItem(order);
+  
 };
 
 
@@ -411,10 +469,44 @@ const handleDelete = (id) => {
   console.log("After deletion, apiData:", apiData);
 };
 
+const downloadTemplate = () => {
+  const templateData = [
+      { date: '', orderNo: '',  portal: '', portalOrderNo: '', portalOrderLineId: '', portalSKU: '', sellerSKU: '', productDescription: '', qty: '', shipByDate: '', dispatched: '', courier: '', cancel: '' } // Add more fields if needed
+  ];
+  const ws = XLSX.utils.json_to_sheet(templateData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template');
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+  function s2ab(s) {
+      const buf = new ArrayBuffer(s.length);
+      const view = new Uint8Array(buf);
+      for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+      return buf;
+  }
+
+  saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'Template.xlsx');
+};
+
+const exportToExcel = () => {
+  const ws = XLSX.utils.json_to_sheet(filteredData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+  function s2ab(s) {
+    const buf = new ArrayBuffer(s.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+    return buf;
+  }
+
+  saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'OrderData.xlsx');
+};
 
     return (
         <div>
-            <ToastContainer position="top-right" />\
+            <ToastContainer position="top-right" />
             <div className='title'>
                     <h1>Import Order Form</h1>
                 </div>
@@ -626,6 +718,25 @@ const handleDelete = (id) => {
         </Form.Select>
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
+
+        <Form.Group as={Col} md="4" controlId="validationCustom01">
+          <Form.Label>AWB No</Form.Label>
+          <Form.Control
+            required
+            type="text"
+            placeholder="AWB No"
+                  defaultValue=""
+                  value={awbNo}
+                onChange={(e) => setAwbNo(e.target.value)}
+          />
+          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+        </Form.Group>
+
+        <Form.Group as={Col} md="4">
+        <Form.Label>Order Status</Form.Label>
+        <Form.Control placeholder={orderStatus} disabled />
+      </Form.Group>
+
     </Row>
                     
     
@@ -638,6 +749,15 @@ const handleDelete = (id) => {
       )}
       <span style={{ margin: '0 10px' }}>or</span>
             <input type="file" onChange={handleFileUpload} />
+            <span style={{margin: "auto"}}></span>
+            <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: 'orange', color: 'white', fontWeight: 'bolder' }}
+              onClick={downloadTemplate}
+            >
+              {<CloudUploadIcon style={{marginBottom: "5px"}}/>} Download Template
+            </Button> 
             </div>
              
            
@@ -662,6 +782,8 @@ const handleDelete = (id) => {
                   <th></th>
                 <th>
                   <span>
+                  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('date')}>
+                  </SwapVertIcon>
                     Date
                     <input
                       type="text"
@@ -673,6 +795,8 @@ const handleDelete = (id) => {
 </th>
 <th>
   <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('orderNo')}>
+                  </SwapVertIcon>
     Order No
     <input
       type="text"
@@ -684,83 +808,8 @@ const handleDelete = (id) => {
 </th>
 <th>
   <span>
-    Portal Order No
-    <input
-      type="text"
-      placeholder="Search by portal order no"
-      value={searchTermPortalOrderNo}
-      onChange={(e) => setSearchTermPortalOrderNo(e.target.value)}
-    />
-  </span>
-</th>
-<th>
-  <span>
-    Portal Order Line Id
-    <input
-      type="text"
-      placeholder="Search by portal order line id"
-      value={searchTermPortalLineId}
-      onChange={(e) => setSearchTermPortalLineId(e.target.value)}
-    />
-  </span>
-</th>
-<th>
-  <span>
-    Portal SKU
-    <input
-      type="text"
-      placeholder="Search by portal SKU"
-      value={searchTermPortalSKU}
-      onChange={(e) => setSearchTermPortalSKU(e.target.value)}
-    />
-  </span>
-</th>
-<th>
-  <span>
-    Product Description
-    <input
-      type="text"
-      placeholder="Search by product description"
-      value={searchTermProductDescription}
-      onChange={(e) => setSearchTermProductDescription(e.target.value)}
-    />
-  </span>
-</th>
-<th>
-  <span>
-    Ship by Date
-    <input
-      type="text"
-      placeholder="Search by ship by date"
-      value={searchTermShibByDate}
-      onChange={(e) => setSearchTermShibByDate(e.target.value)}
-    />
-  </span>
-</th>
-<th>
-  <span>
-    Courier
-    <input
-      type="text"
-      placeholder="Search by courier"
-      value={searchTermCourier}
-      onChange={(e) => setSearchTermCourier(e.target.value)}
-    />
-  </span>
-</th>
-<th>
-  <span>
-    Dispatched
-    <input
-      type="text"
-      placeholder="Search by dispatched"
-      value={searchTermDispatched}
-      onChange={(e) => setSearchTermDispatched(e.target.value)}
-    />
-  </span>
-</th>
-<th>
-  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portal')}>
+                  </SwapVertIcon>
     Portal
     <input
       type="text"
@@ -772,6 +821,47 @@ const handleDelete = (id) => {
 </th>
 <th>
   <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portalOrderNo')}>
+                  </SwapVertIcon>
+    Portal Order No
+    <input
+      type="text"
+      placeholder="Search by portal order no"
+      value={searchTermPortalOrderNo}
+      onChange={(e) => setSearchTermPortalOrderNo(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portalOrderLineId')}>
+                  </SwapVertIcon>
+    Portal Order Line Id
+    <input
+      type="text"
+      placeholder="Search by portal order line id"
+      value={searchTermPortalLineId}
+      onChange={(e) => setSearchTermPortalLineId(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portalSKU')}>
+                  </SwapVertIcon>
+    Portal SKU
+    <input
+      type="text"
+      placeholder="Search by portal SKU"
+      value={searchTermPortalSKU}
+      onChange={(e) => setSearchTermPortalSKU(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('sellerSKU')}>
+                  </SwapVertIcon>
     Seller SKU
     <input
       type="text"
@@ -783,6 +873,21 @@ const handleDelete = (id) => {
 </th>
 <th>
   <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('productDescription')}>
+                  </SwapVertIcon>
+    Product Description
+    <input
+      type="text"
+      placeholder="Search by product description"
+      value={searchTermProductDescription}
+      onChange={(e) => setSearchTermProductDescription(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('qty')}>
+                  </SwapVertIcon>
     Quantity
     <input
       type="text"
@@ -792,15 +897,81 @@ const handleDelete = (id) => {
     />
   </span>
 </th>
-
 <th>
   <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('shipByDate')}>
+                  </SwapVertIcon>
+    Ship by Date
+    <input
+      type="text"
+      placeholder="Search by ship by date"
+      value={searchTermShibByDate}
+      onChange={(e) => setSearchTermShibByDate(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('dispatched')}>
+                  </SwapVertIcon>
+    Dispatched
+    <input
+      type="text"
+      placeholder="Search by dispatched"
+      value={searchTermDispatched}
+      onChange={(e) => setSearchTermDispatched(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('courier')}>
+                  </SwapVertIcon>
+    Courier
+    <input
+      type="text"
+      placeholder="Search by courier"
+      value={searchTermCourier}
+      onChange={(e) => setSearchTermCourier(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('cancel')}>
+                  </SwapVertIcon>
     Order Cancel
     <input
       type="text"
       placeholder="Search by cancel"
       value={searchTermCancel}
       onChange={(e) => setSearchTermCancel(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('awbNo')}>
+                  </SwapVertIcon>
+    AWB No
+    <input
+      type="text"
+      placeholder="Search by awbNo"
+      value={searchTermAwbNo}
+      onChange={(e) => setSearchTermAwbNo(e.target.value)}
+    />
+  </span>
+</th>
+<th>
+  <span>
+  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('orderStatus')}>
+                  </SwapVertIcon>
+    Order Status
+    <input
+      type="text"
+      placeholder="Search by order status"
+      value={searchTermOrderStatus}
+      onChange={(e) => setSearchTermOrderStatus(e.target.value)}
     />
   </span>
 </th>
@@ -835,10 +1006,13 @@ const handleDelete = (id) => {
                       })()}
                     </td>
                   <td>{order.orderNo}</td>
+                  <td>{order.portal}</td>
                   <td>{order.portalOrderNo}</td>
                   <td>{order.portalOrderLineId}</td>
                   <td>{order.portalSKU}</td>
+                  <td>{order.sellerSKU}</td>
                   <td>{order.productDescription}</td>
+                  <td>{order.qty}</td>
                   <td>
                     {(() => {
                       const date = new Date(order.shipByDate);
@@ -848,23 +1022,39 @@ const handleDelete = (id) => {
                       return `${day}-${month}-${year}`;
                     })()}
                   </td>
-                  <td>{order.courier}</td>
                   <td>{order.dispatched}</td>
-                  <td>{order.portal}</td>
-                  <td>{order.sellerSKU}</td>
-                  <td>{order.qty}</td>
-                  <td>{order.cancel}</td>
+                  <td>{order.courier}</td>
+                  <td>{order.cancel ? order.cancel : ''}</td>
+                  <td>{order.awbNo ? order.awbNo : ''}</td>
+                  <td>{order.orderStatus ? order.orderStatus : ''}</td>
                 </tr>
               ))}
             </tbody>
           </Table>
-          <Pagination>
-            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
-              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
-                {index + 1}
-              </Pagination.Item>
-            ))}
-          </Pagination>
+          
+          </div>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+          <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: '#5463FF', color: 'white', fontWeight: 'bolder' }}
+              onClick={exportToExcel}
+            >
+              {<FileDownloadIcon style={{marginBottom: "5px"}}/>} Export to Excel
+            </Button>
+
+            
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {rowsPerPageDropdown}
+            
+            <Pagination>
+              {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+                <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+            </Pagination>
+          </div>
           </div>
         </AccordionDetails>
       </Accordion>

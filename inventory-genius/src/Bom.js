@@ -22,12 +22,19 @@ import { IoIosRefresh } from "react-icons/io";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Pagination from 'react-bootstrap/Pagination';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 function Bom() {
   const [validated, setValidated] = useState(false);
   const [skucode, setSku] = useState("");
   const [bomItem, setBomItem] = useState("");
-  const [qty, setQty] = useState("");
+  const [bomCode, setBomCode] = useState("");
+  const [defaultStartDate, setDefaultStartDate] = useState("");
+  const [defaultEndDate, setDefaultEndDate] = useState("");
   const [apiData, setApiData] = useState([]); 
   const [rowSelected, setRowSelected] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -35,11 +42,33 @@ function Bom() {
   const [skuList, setSkuList] = useState([]);
   const [skuSearchTerm, setSkuSearchTerm] = useState("");
   const [bomItemSearchTerm, setBomItemSearchTerm] = useState("");
-  const [qtySearchTerm, setQtySearchTerm] = useState("");
+  const [bomCodeSearchTerm, setBomCodeSearchTerm] = useState("");
+  const [defaultStartDateSearchTerm, setDefaultStartDateSearchTerm] = useState("");
+  const [defaultEndDateSearchTerm, setDefaultEndDateSearchTerm] = useState("");
   const [isRotating, setIsRotating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const rowsPerPageOptions = [5, 10, 20];
 
+  // Function to handle change in items per page
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+  
+  // JSX for the dropdown menu to select rows per page
+  const rowsPerPageDropdown = (
+    <Form.Group controlId="itemsPerPageSelect">
+      <Form.Select style={{marginLeft: "5px", width : "70px"}} value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        {rowsPerPageOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Select>
+    </Form.Group>
+  );
   const handleRefresh = () => {
     fetchData();
     setIsRotating(true);
@@ -49,12 +78,43 @@ function Bom() {
   };
 
   const filteredData = apiData.filter(supplier => {
+    const sku = supplier.skucode?.toLowerCase() ?? '';
+    const startDate = supplier.defaultStartDate?.toLowerCase() ?? '';
+    const endDate = supplier.defaultEndDate?.toLowerCase() ?? '';
+    const bom = supplier.bomCode?.toLowerCase() ?? '';
+    const skuTerm = skuSearchTerm?.toLowerCase() ?? '';
+    const startDateTerm = defaultStartDateSearchTerm?.toLowerCase() ?? '';
+    const endDateTerm = defaultEndDateSearchTerm?.toLowerCase() ?? '';
+    const bomTerm = bomCodeSearchTerm?.toLowerCase() ?? '';
+  
     return (
-      (supplier.qty && supplier.qty.toString().toLowerCase().includes(qtySearchTerm.toLowerCase())) && 
-      (supplier.bomItem && supplier.bomItem.toLowerCase().includes(bomItemSearchTerm.toLowerCase())) &&
-      (supplier.skucode && supplier.skucode.toLowerCase().includes(skuSearchTerm.toLowerCase()))
+      sku.includes(skuTerm) &&
+      startDate.includes(startDateTerm) &&
+      endDate.includes(endDateTerm) &&
+      bom.includes(bomTerm)
     );
   });
+  
+  
+
+  const sortedData = filteredData.sort((a, b) => {
+    if (sortConfig.key) {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+      return 0;
+    }
+    return filteredData;
+  });
+
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -115,9 +175,12 @@ const handleFileUpload = (e) => {
 
         jsonData.forEach(item => {
             const formattedData = {
-                bomItem: item.bomItem,
-                qty: item.qty,
-                skucode: item.skucode
+                // bomItem: item.bomItem,
+                // qty: item.qty,
+                skucode: item.skucode,
+                bomCode: item.bomCode,
+                defaultStartDate: item.defaultStartDate,
+                defaultEndDate: item.defaultEndDate
             };
 
             // Fetch item details using skucode
@@ -154,11 +217,10 @@ const handleFileUpload = (e) => {
   
 
 const handleSubmit = (event) => {
-  console.log("qty = ", qty);
   event.preventDefault();
   const form = event.currentTarget;
 
-  if (form.checkValidity() === false || !bomItem || !qty || !skucode) {
+  if (form.checkValidity() === false || !skucode || !bomCode) {
     event.stopPropagation();
     setValidated(true); 
     return;
@@ -179,9 +241,10 @@ const handleSubmit = (event) => {
         // Construct formData with item
         const formData = {
           skucode, 
-          bomItem,
+          defaultStartDate,
+          bomCode,
+          defaultEndDate,
           bomItems : [item], // Wrap the single item in an array
-          qty,
         };
 
         // Send POST request with formData
@@ -194,8 +257,11 @@ const handleSubmit = (event) => {
             console.log('form data: ', formData);
             setValidated(false);
             setApiData([...apiData, response.data]);
-            setBomItem("");
-            setQty("");
+            // setBomItem("");
+            // setQty("");
+            setBomCode("");
+            setDefaultStartDate("");
+            setDefaultEndDate("");
             setSku("");
           })
           .catch(error => {
@@ -233,9 +299,10 @@ const handleRowSubmit = () => {
         // Construct formData with item
         const formData = {
           skucode,
-          bomItem,
+          defaultStartDate,
+          defaultEndDate,
+          bomCode,
           bomItems: [item], // Wrap the single item in an array
-          qty
         };
 
         console.log('form data: ', formData);
@@ -252,8 +319,9 @@ const handleRowSubmit = () => {
             setValidated(false);
             setRowSelected(false);
             setSku("");
-            setBomItem("");
-            setQty("");
+            setBomCode("");
+            setDefaultStartDate("");
+            setDefaultEndDate("");
           })
           .catch(error => {
             console.error('Error sending PUT request:', error);
@@ -269,9 +337,10 @@ const handleRowSubmit = () => {
 
   
   const handleRowClick = (bom) => {
+    setBomCode(bom.bomCode);
     setSku(bom.skucode);
-    setBomItem(bom.bomItem);
-    setQty(bom.qty);
+    setDefaultStartDate(bom.defaultStartDate);
+    setDefaultEndDate(bom.defaultEndDate);
     setRowSelected(true);
     setSelectedItem(bom);
   };
@@ -289,7 +358,7 @@ const handleRowSubmit = () => {
 
 const downloadTemplate = () => {
   const templateData = [
-      {bomItem: '', qty: '', skucode: ''} 
+      {defaultStartDate: '', defaultEndDate: '', bomCode: '', skucode: ''} 
   ];
   const ws = XLSX.utils.json_to_sheet(templateData);
   const wb = XLSX.utils.book_new();
@@ -329,6 +398,23 @@ const handleDelete = (id) => {
 
   console.log("After deletion, apiData:", apiData);
 };
+
+
+const exportToExcel = () => {
+  const ws = XLSX.utils.json_to_sheet(filteredData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+  function s2ab(s) {
+    const buf = new ArrayBuffer(s.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+    return buf;
+  }
+
+  saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'BomData.xlsx');
+};
   
 
   return (
@@ -351,30 +437,20 @@ const handleDelete = (id) => {
         <AccordionDetails>
         <Form noValidate validated={validated} onSubmit={handleSubmit}>
             <Row className="mb-3">
-              <Form.Group as={Col} md="4" controlId="validationCustom02">
-                <Form.Label>BOM item</Form.Label>
-                <Form.Control
-                  required
-                  type="text"
-                  placeholder="BOM item"
-                  name="bomItem"
-                  value={bomItem}
-                  onChange={(e) => setBomItem(e.target.value)}
-                />
-                <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-              </Form.Group>
-              <Form.Group as={Col} md="4" controlId="validationCustom03">
-                <Form.Label>Quantity</Form.Label>
-                <Form.Control
-                  required
-                  type="text"
-                  placeholder="Quantity"
-                  name="quantity"
-                  value={qty}
-                  onChange={(e) => setQty(e.target.value)}
-                />
-                <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
-              </Form.Group>
+            <Form.Group as={Col} md="4" controlId="validationCustom01">
+          <Form.Label>Bom Code </Form.Label>
+          <Form.Control
+            required
+            type="text"
+            placeholder="Bom Code"
+            defaultValue=""
+            value={ bomCode}
+            onChange={(e) => setBomCode(e.target.value)}
+          />
+          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+        </Form.Group>
+              
+              
               <Form.Group as={Col} md="4" controlId="validationCustom01">
                 <Form.Label>SKU Code</Form.Label>
 
@@ -385,7 +461,7 @@ const handleDelete = (id) => {
                   >
                     <option value="">Select SKU Code</option>
                     {skuList.map((sku) => (
-                      <option key={sku.id} value={sku.skucode}>
+                      <option key={sku.itemId} value={sku.skucode}>
                         {sku.skucode} - {sku.description}
                       </option>
                     ))}
@@ -394,6 +470,37 @@ const handleDelete = (id) => {
           <IoIosRefresh onClick={handleRefresh} className={isRotating ? 'refresh-icon rotating' : 'refresh-icon'}/>
                   <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
 
+              </Form.Group>
+              <Form.Group as={Col} md="4" controlId="validationCustom02">
+                <Form.Label>Default Start Date</Form.Label>
+                
+                  <div className="custom-date-picker">
+                  <DatePicker
+                    selected={defaultStartDate}
+                    onChange={date => setDefaultStartDate(date)}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="Select Date"
+                    className="form-control" // Apply Bootstrap form control class
+                  />
+                </div>
+                
+                <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+              </Form.Group>
+
+              <Form.Group as={Col} md="4" controlId="validationCustom02">
+                <Form.Label>Default End Date</Form.Label>
+                
+                  <div className="custom-date-picker">
+                  <DatePicker
+                    selected={defaultEndDate}
+                    onChange={date => setDefaultEndDate(date)}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="Select Date"
+                    className="form-control" // Apply Bootstrap form control class
+                  />
+                </div>
+                
+                <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
               </Form.Group>
             </Row>
             <div className='buttons'>
@@ -404,7 +511,15 @@ const handleDelete = (id) => {
       )}
       <span style={{ margin: '0 10px' }}>or</span>
             <input type="file" onChange={handleFileUpload} />
-            <button onClick={downloadTemplate}>Download Template</button>
+            <span style={{margin: "auto"}}></span>
+            <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: 'orange', color: 'white', fontWeight: 'bolder' }}
+              onClick={downloadTemplate}
+            >
+              {<CloudUploadIcon style={{marginBottom: "5px"}}/>} Download Template
+            </Button> 
 
             </div>
           </Form>
@@ -426,7 +541,21 @@ const handleDelete = (id) => {
             <thead>
               <tr>
                 <th></th>
-                <th>SKU
+                <th>
+                <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('bomCode')}>
+                  </SwapVertIcon>
+                  Bom Code
+                <span style={{ margin: '0 10px' }}><input
+                  type="text"
+                  placeholder="Search by bomCode"
+                  value={bomCodeSearchTerm}
+                  onChange={(e) => setBomCodeSearchTerm(e.target.value)}
+                /></span>
+                </th>
+                <th>
+                <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('skucode')}>
+                  </SwapVertIcon>
+                  SKU
                 <span style={{ margin: '0 10px' }}><input
                   type="text"
                   placeholder="Search by SKU"
@@ -434,20 +563,26 @@ const handleDelete = (id) => {
                   onChange={(e) => setSkuSearchTerm(e.target.value)}
                 /></span>
                 </th>
-                <th>BOM Item
+                <th>
+                <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('defaultStartDate')}>
+                  </SwapVertIcon>
+                  Default Start Date 
                 <span style={{ margin: '0 10px' }}><input
                   type="text"
-                  placeholder="Search by bom"
-                  value={bomItemSearchTerm}
-                  onChange={(e) => setBomItemSearchTerm(e.target.value)}
+                  placeholder="Search by start date"
+                  value={defaultStartDateSearchTerm}
+                  onChange={(e) => setDefaultStartDateSearchTerm(e.target.value)}
                 /></span>
                 </th>
-                <th>Quantity
+                <th>
+                <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('defaultEndDate')}>
+                  </SwapVertIcon>
+                  Default End Date 
                 <span style={{ margin: '0 10px' }}><input
                   type="text"
-                  placeholder="Search by qty"
-                  value={qtySearchTerm}
-                  onChange={(e) => setQtySearchTerm(e.target.value)}
+                  placeholder="Search by end date"
+                  value={defaultEndDateSearchTerm}
+                  onChange={(e) => setDefaultEndDateSearchTerm(e.target.value)}
                 /></span>
                 </th>
               </tr>
@@ -469,21 +604,39 @@ const handleDelete = (id) => {
 </button>
 
       </td>
-      <td>{bom.skucode}</td>
-      <td>{bom.bomItem}</td>
-      <td>{bom.qty}</td>
+      <td>{bom.bomCode ? bom.bomCode : ''}</td>
+      <td>{bom.skucode ? bom.skucode : ''}</td>
+      <td>{bom.defaultStartDate ? bom.defaultStartDate : ''}</td>
+      <td>{bom.defaultEndDate ? bom.defaultEndDate: ''}</td>
     </tr>
   ))}
 </tbody>
 
           </Table>
-          <Pagination>
-            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
-              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
-                {index + 1}
-              </Pagination.Item>
-            ))}
-          </Pagination>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+          <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: '#5463FF', color: 'white', fontWeight: 'bolder' }}
+              onClick={exportToExcel}
+            >
+              {<FileDownloadIcon style={{marginBottom: "5px"}}/>} Export to Excel
+            </Button>
+
+            
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {rowsPerPageDropdown}
+            
+            <Pagination>
+              {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+                <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+            </Pagination>
+          </div>
+       
+          </div>
         </AccordionDetails>
       </Accordion>
     </div>

@@ -55,6 +55,11 @@ public class Order {
     private String courier;
     @Column(name = "cancel")
     private String cancel;
+    @Column(name = "order_status")
+    private String orderStatus;
+    @Column(name = "awb_no")
+    private String awbNo;
+    
 
     @ManyToMany()
     @JoinTable(name = "order_items", joinColumns = @JoinColumn(name = "order_id"), inverseJoinColumns = @JoinColumn(name = "item_id"))
@@ -65,15 +70,13 @@ public class Order {
     @JoinColumn(name = "picklist_id")
     private PickList picklist;
 
-    
-
     public Order() {
 
     }
 
     public Order(Long orderId, Date Date, String orderNo, String portal, String portalOrderNo, String portalOrderLineId,
             String portalSKU, String sellerSKU, String productDescription, double qty, Date shipByDate, String dispatched,
-            String courier, String cancel) {
+            String courier, String cancel, String awbNo, String orderStatus) {
         this.orderId = orderId;
         this.orderNo = orderNo;
         this.portal = portal;
@@ -88,6 +91,8 @@ public class Order {
         this.courier = courier;
         this.Date = Date;
         this.cancel = cancel;
+        this.orderStatus = orderStatus;
+        this.awbNo = awbNo;
     }
 
     public Long getOrderId() {
@@ -224,6 +229,22 @@ public class Order {
 
     public void setPicklist(PickList picklist) {
         this.picklist = picklist;
+    }
+
+    public String getOrderStatus() {
+        return orderStatus;
+    }
+
+    public void setOrderStatus(String orderStatus) {
+        this.orderStatus = orderStatus;
+    }
+
+    public String getAwbNo() {
+        return awbNo;
+    }
+
+    public void setAwbNo(String awbNo) {
+        this.awbNo = awbNo;
     }
     
 }

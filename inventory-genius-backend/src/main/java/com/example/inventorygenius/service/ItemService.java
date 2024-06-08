@@ -33,7 +33,24 @@ public class ItemService {
         // Update the existing item with the new values
         existingItem.setSKUCode(updatedItem.getSKUCode());
         existingItem.setDescription(updatedItem.getDescription());
-        // Update other fields as needed
+            existingItem.setPackOf(updatedItem.getPackOf());
+            existingItem.setParentSKU(updatedItem.getParentSKU());
+            existingItem.setBarcode(updatedItem.getBarcode());
+            existingItem.setSKUCode(updatedItem.getSKUCode());
+            existingItem.setGroup1(updatedItem.getGroup1());
+            existingItem.setGroup2(updatedItem.getGroup2());
+            existingItem.setGroup3(updatedItem.getGroup3());
+            existingItem.setSizeRange(updatedItem.getSizeRange());
+            existingItem.setUnit(updatedItem.getUnit());
+            existingItem.setSellerSKUCode(updatedItem.getSellerSKUCode());
+            existingItem.setSellingPrice(updatedItem.getSellingPrice());
+            existingItem.setMrp(updatedItem.getMrp());
+            existingItem.setImg(updatedItem.getImg());
+            existingItem.setSuppliers(updatedItem.getSuppliers());
+            existingItem.setStorages(updatedItem.getStorages());
+            existingItem.setBoms(updatedItem.getBoms());
+            existingItem.setStockEntries(updatedItem.getStockEntries());
+            existingItem.setOrders(updatedItem.getOrders());
         
         // Save the updated item
         return itemRepository.save(existingItem);

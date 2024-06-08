@@ -5,7 +5,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.inventorygenius.entity.Bom;
 import com.example.inventorygenius.entity.Return;
+import com.example.inventorygenius.entity.StockCount;
 import com.example.inventorygenius.entity.Storage;
 import com.example.inventorygenius.service.ReturnService;
 import com.example.inventorygenius.service.StockService;

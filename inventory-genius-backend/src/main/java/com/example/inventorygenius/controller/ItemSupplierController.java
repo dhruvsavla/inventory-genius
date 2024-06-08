@@ -165,30 +165,22 @@ public Item getMethodName(@PathVariable String skucode) {
 
 @GetMapping("/search/seller/{sellerName}")
 public ResponseEntity<String> findSellerSKUCodesBySellerName(@PathVariable String sellerName) {
-    // Find the supplier with the given seller name
     Supplier supplier = supplierRepository.findBySupplierName(sellerName);
 
-    // If no supplier found, return a not found response
     if (supplier == null) {
         return ResponseEntity.notFound().build();
     }
 
-    // Create a string to hold sellerSKUCodes
     StringBuilder sellerSKUCodeBuilder = new StringBuilder();
 
-    // Find items associated with the supplier
     List<Item> items = itemRepository.findBySuppliersSupplierId(supplier.getSupplierId());
 
-    // Extract sellerSKUCode from the found items and concatenate them
     for (Item item : items) {
-        // Concatenate sellerSKUCode with a delimiter (e.g., comma)
         sellerSKUCodeBuilder.append(item.getSellerSKUCode()).append(", ");
     }
 
-    // Remove the trailing comma and space
     String sellerSKUCode = sellerSKUCodeBuilder.toString().replaceAll(", $", "");
 
-    // Return the concatenated sellerSKUCode
     return ResponseEntity.ok(sellerSKUCode);
 }
 

@@ -21,6 +21,9 @@ import { IoIosRefresh } from "react-icons/io";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Pagination from 'react-bootstrap/Pagination';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 function ItemPortalMapping() {
     const [validated, setValidated] = useState(false);
@@ -41,6 +44,28 @@ function ItemPortalMapping() {
     const [sellerSKUList, setSellerSKUList] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(5);
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+
+    const rowsPerPageOptions = [5, 10, 20];
+
+  // Function to handle change in items per page
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+  
+  // JSX for the dropdown menu to select rows per page
+  const rowsPerPageDropdown = (
+    <Form.Group controlId="itemsPerPageSelect">
+      <Form.Select style={{marginLeft: "5px", width : "70px"}} value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        {rowsPerPageOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Select>
+    </Form.Group>
+  );
 
     const handleRefresh = () => {
       fetchData();
@@ -58,6 +83,26 @@ function ItemPortalMapping() {
         (!searchTermSellerSKU || (supplier.sellerSkuCode && supplier.sellerSkuCode.toLowerCase().includes(searchTermSellerSKU.toLowerCase())))
       );
     });
+
+    const sortedData = filteredData.sort((a, b) => {
+      if (sortConfig.key) {
+        const aValue = sortConfig.key === 'supplier' ? a[sortConfig.key]?.supplierName : a[sortConfig.key];
+        const bValue = sortConfig.key === 'supplier' ? b[sortConfig.key]?.supplierName : b[sortConfig.key];
+        if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+        return 0;
+      }
+      return filteredData;
+    });
+    
+
+    const requestSort = (key) => {
+      let direction = 'ascending';
+      if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+      }
+      setSortConfig({ key, direction });
+    };
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -365,6 +410,22 @@ const handleSupplierChange = (event, name) => {
   const uniquePortals = [...new Set(apiData.filter(item => item.portal !== null).map(item => item.portal))];
 
 
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(filteredData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+  
+    function s2ab(s) {
+      const buf = new ArrayBuffer(s.length);
+      const view = new Uint8Array(buf);
+      for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+      return buf;
+    }
+  
+    saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'ItemPortalMappingData.xlsx');
+  };
+
     return (
         <div>
             <ToastContainer position="top-right" />
@@ -462,7 +523,15 @@ const handleSupplierChange = (event, name) => {
       )}
       <span style={{ margin: '0 10px' }}>or</span>
             <input type="file" onChange={handleFileUpload} />
-            <button onClick={downloadTemplate}>Download Template</button>
+            <span style={{margin: "auto"}}></span>
+            <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: 'orange', color: 'white', fontWeight: 'bolder' }}
+              onClick={downloadTemplate}
+            >
+              {<CloudUploadIcon style={{marginBottom: "5px"}}/>} Download Template
+            </Button> 
 
             </div>
             </Form>
@@ -482,7 +551,10 @@ const handleSupplierChange = (event, name) => {
             <thead>
               <tr>
                 <th></th>
-                <th>Portal
+                <th>
+                <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portal')}>
+                  </SwapVertIcon>
+                  Portal
                 <span style={{ margin: '0 10px' }}><input
                   type="text"
                   placeholder="Search by Portal"
@@ -490,7 +562,10 @@ const handleSupplierChange = (event, name) => {
                   onChange={(e) => setSearchTermPortal(e.target.value)}
                 /></span>
                 </th>
-                <th>Portal SKUCode
+                <th>
+                <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portalSkuCode')}>
+                  </SwapVertIcon>
+                  Portal SKUCode
                 <span style={{ margin: '0 10px' }}><input
                   type="text"
                   placeholder="Search by PortalSKU"
@@ -498,7 +573,10 @@ const handleSupplierChange = (event, name) => {
                   onChange={(e) => setSearchTermPortalSKU(e.target.value)}
                 /></span>
                 </th>
-                  <th>Supplier
+                  <th>
+                  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('supplier')}>
+                  </SwapVertIcon>
+                    Supplier
                   <span style={{ margin: '0 10px' }}><input
                   type="text"
                   placeholder="Search by Supplier"
@@ -506,7 +584,10 @@ const handleSupplierChange = (event, name) => {
                   onChange={(e) => setSearchTermSupplier(e.target.value)}
                 /></span>
                   </th>
-                  <th>Supplier SKUCode
+                  <th>
+                  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('sellerSkuCode')}>
+                  </SwapVertIcon>
+                    Supplier SKUCode
                   <span style={{ margin: '0 10px' }}><input
                   type="text"
                   placeholder="Search by SupplierSKU"
@@ -541,13 +622,29 @@ const handleSupplierChange = (event, name) => {
               ))}
             </tbody>
           </Table>
-          <Pagination>
-            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
-              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
-                {index + 1}
-              </Pagination.Item>
-            ))}
-          </Pagination>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+          <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: '#5463FF', color: 'white', fontWeight: 'bolder' }}
+              onClick={exportToExcel}
+            >
+              {<FileDownloadIcon style={{marginBottom: "5px"}}/>} Export to Excel
+            </Button>
+
+            
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {rowsPerPageDropdown}
+            
+            <Pagination>
+              {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+                <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+            </Pagination>
+          </div>
+          </div>
         </AccordionDetails>
       </Accordion>
             </div>

@@ -13,6 +13,7 @@ public class OrderData {
     private String rackNumber;
     private Double pickQty;
     private String img;
+    private String bomCode;
 
     public Date getDate() {
         return date;
@@ -73,6 +74,12 @@ public class OrderData {
     }
     public void setImg(String img) {
         this.img = img;
+    }
+    public String getBomCode() {
+        return bomCode;
+    }
+    public void setBomCode(String bomCode) {
+        this.bomCode = bomCode;
     }
     
 }

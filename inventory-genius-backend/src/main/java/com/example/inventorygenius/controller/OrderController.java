@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import com.example.inventorygenius.entity.Bom;
 import com.example.inventorygenius.entity.Item;
 import com.example.inventorygenius.entity.Order;
+import com.example.inventorygenius.entity.BomItem;
 import com.example.inventorygenius.entity.Stock;
 import com.example.inventorygenius.entity.StockCount;
 import com.example.inventorygenius.repository.OrderRepository;
@@ -15,12 +16,18 @@ import com.example.inventorygenius.service.ItemSupplierService;
 import com.example.inventorygenius.service.OrderService;
 import com.example.inventorygenius.service.StockCountService;
 import com.example.inventorygenius.service.StockService;
+import com.example.inventorygenius.service.PickListService;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
+
 
 
 @RestController
@@ -38,6 +45,9 @@ public class OrderController {
 
     @Autowired
     private ItemSupplierService itemSupplierService;
+
+    @Autowired
+    private PickListService pickListService;
 
     @PostMapping
     public ResponseEntity<Order> addItem(@RequestBody Order order) {
@@ -72,7 +82,8 @@ public class OrderController {
         existingOrder.setSellerSKU(updatedOrder.getSellerSKU());
         existingOrder.setCancel(updatedOrder.getCancel());
         existingOrder.setItems(updatedOrder.getItems());
-        
+        existingOrder.setAwbNo(updatedOrder.getAwbNo());
+
         // Check if the order has been canceled
         if (updatedOrder.getCancel().equals("Order Canceled") && updatedOrder.getPicklist() == null) {
             // Create a new stock object
@@ -83,16 +94,17 @@ public class OrderController {
             stock.setSkucode(item.getParentSKU());
             stock.setSubQty("0");
             for (Bom bom : item.getBoms()){
-                if (bom.getBomItem().equals(item.getParentSKU())){
-                    stock.setAddQty(String.valueOf(updatedOrder.getQty() * bom.getQty()));
+                for (BomItem bomItem : bom.getItemsInBom()){
+                if (bomItem.getBomItem().equals(item.getParentSKU())){
+                    stock.setAddQty(String.valueOf(updatedOrder.getQty() * Double.parseDouble(bomItem.getQty())));
                 }
-                if (!bom.getBomItem().equals(item.getParentSKU())){
+                if (!bomItem.getBomItem().equals(item.getParentSKU())){
                     Stock s = new Stock();
                     s.setDate(new Date());
                     s.setSubQty("0");
                     s.setItem(item);
-                    s.setAddQty(String.valueOf(updatedOrder.getQty() * bom.getQty()));
-                    s.setSkucode(bom.getBomItem());
+                    s.setAddQty(String.valueOf(updatedOrder.getQty() * Double.parseDouble(bomItem.getQty())));
+                    s.setSkucode(bomItem.getBomItem());
                     s.setSource("Order");
                     s.setMessage("Order Cancelled");
                     s.setNumber("Order Number = " + String.valueOf(updatedOrder.getOrderNo()));
@@ -105,6 +117,7 @@ public class OrderController {
             stock.setSource("Order");
             stock.setMessage("Order Cancelled");
             stock.setNumber("Order Number = " + String.valueOf(updatedOrder.getOrderNo()));
+            }
         }
         else {
             stock.setDate(new Date());
@@ -122,17 +135,19 @@ public class OrderController {
             StockCount sc = new StockCount();
             if(updatedOrder.getItems().get(0).getBoms().size() > 0) {
                 for (Bom b : updatedOrder.getItems().get(0).getBoms()){
-                    if (b.getBomItem().equals(updatedOrder.getItems().get(0).getParentSKU())){
+                    for (BomItem boomItem : b.getItemsInBom()){
+                    if (boomItem.getBomItem().equals(updatedOrder.getItems().get(0).getParentSKU())){
                         sc = stockCountService.getStockCountBySKUCode(updatedOrder.getItems().get(0).getParentSKU());
-                        sc.setCount(sc.getCount() + updatedOrder.getQty() * b.getQty());
+                        sc.setCount(sc.getCount() + updatedOrder.getQty() * Double.parseDouble(boomItem.getQty()));
                     }
                     else{
                         StockCount scBom = new StockCount();
-                        scBom = stockCountService.getStockCountBySKUCode(b.getBomItem());
-                        scBom.setCount(scBom.getCount() + updatedOrder.getQty() * b.getQty());
+                        scBom = stockCountService.getStockCountBySKUCode(boomItem.getBomItem());
+                        scBom.setCount(scBom.getCount() + updatedOrder.getQty() * Double.parseDouble(boomItem.getQty()));
                         stockCountService.updateStockCount(scBom);
                     }  
                 }
+            }
             }
             else{
                 sc = stockCountService.getStockCountBySKUCode(updatedOrder.getItems().get(0).getSKUCode());
@@ -151,22 +166,24 @@ public class OrderController {
             stock.setSkucode(item.getParentSKU());
             stock.setAddQty("0");
             for (Bom bom : item.getBoms()){
-                if (bom.getBomItem().equals(item.getParentSKU())){
-                    stock.setSubQty(String.valueOf(updatedOrder.getQty() * bom.getQty()));
+                for(BomItem bomItem : bom.getItemsInBom()){
+                if (bomItem.getBomItem().equals(item.getParentSKU())){
+                    stock.setSubQty(String.valueOf(updatedOrder.getQty() * Double.parseDouble(bomItem.getQty())));
                 }
-                if (!bom.getBomItem().equals(item.getParentSKU())){
+                if (!bomItem.getBomItem().equals(item.getParentSKU())){
                     Stock s = new Stock();
                     s.setDate(new Date());
                     s.setAddQty("0");
                     s.setItem(item);
-                    s.setSubQty(String.valueOf(updatedOrder.getQty() * bom.getQty()));
-                    s.setSkucode(bom.getBomItem());
+                    s.setSubQty(String.valueOf(updatedOrder.getQty() * Double.parseDouble(bomItem.getQty())));
+                    s.setSkucode(bomItem.getBomItem());
                     s.setSource("Order");
                     s.setMessage("Order Not Cancelled");
                     s.setNumber("Order Number = " + String.valueOf(updatedOrder.getOrderNo()));
                     stockService.addStock(s);
                 }
             }
+        }
             
             stock.setItem(updatedOrder.getItems().get(0));
 
@@ -189,7 +206,26 @@ public class OrderController {
         stockService.addStock(stock);
             
             StockCount sc = stockCountService.getStockCountBySKUCode(updatedOrder.getItems().get(0).getSKUCode());
-            sc.setCount(sc.getCount() - updatedOrder.getQty());
+            if(updatedOrder.getItems().get(0).getBoms().size() > 0) {
+                for (Bom b : updatedOrder.getItems().get(0).getBoms()){
+                    for(BomItem bomItem : b.getItemsInBom()){
+                    if (bomItem.getBomItem().equals(updatedOrder.getItems().get(0).getParentSKU())){
+                        sc = stockCountService.getStockCountBySKUCode(updatedOrder.getItems().get(0).getParentSKU());
+                        if (existingOrder.getQty() != updatedOrder.getQty()){
+                            sc.setCount(sc.getCount() + updatedOrder.getQty() * Double.parseDouble(bomItem.getQty()));
+                        }
+                    }
+                    else{
+                        StockCount scBom = new StockCount();
+                        scBom = stockCountService.getStockCountBySKUCode(bomItem.getBomItem());
+                        if (existingOrder.getQty() != updatedOrder.getQty()){
+                            scBom.setCount(scBom.getCount() + updatedOrder.getQty() * Double.parseDouble(bomItem.getQty()));
+                        }
+                        stockCountService.updateStockCount(scBom);
+                    }  
+                }
+            }
+            }
             stockCountService.updateStockCount(sc);
         }
         
@@ -221,14 +257,67 @@ public class OrderController {
         return orderRepository.findAllWithItems();
     }
 
-    @GetMapping("/not/generated/orders")
-    public List<Order> getNotGeneratedOrders() {
-        return orderService.getAllNotGeneratedOrders();
-    }  
+     
 
-    @GetMapping("/not/generated/packinglist/orders")
-    public List<Order> getNotGeneratedPackingListOrders() {
-        return orderService.getAllNotGeneratedPackListOrders();
-    }
     
+
+    @PutMapping("/scan/dispatch")
+    public ResponseEntity<?> updateOrderStatusDispatch(@RequestParam String awb) {
+        List<Order> updatedOrders = new ArrayList<>();
+        List<Order> allOrders = orderService.getAllOrders();
+        
+        if (allOrders == null || allOrders.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found.");
+        }
+
+        for (Order order : allOrders) {
+            String orderAwbNo = order.getAwbNo();
+            if (orderAwbNo != null && orderAwbNo.equals(awb)) {
+                if (order.getOrderStatus().equals("packed")) {
+                    order.setOrderStatus("dispatched");
+                    orderService.updateOrder(order.getOrderId(), order);
+                    updatedOrders.add(order);
+                } else {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body("Order with AWB " + awb + " is not packed.");
+                }
+            }
+        }
+
+        if (updatedOrders.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders with AWB " + awb + " found.");
+        }
+
+        return ResponseEntity.ok(updatedOrders);
+    }
+
+
+    @PutMapping("/scan/pack")
+    public ResponseEntity<?> updateOrderStatusPack(@RequestParam String awb) {
+        List<Order> updatedOrders = new ArrayList<>();
+        List<Order> allOrders = orderService.getAllOrders();
+        
+        if (allOrders == null || allOrders.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found.");
+        }
+
+        for (Order order : allOrders) {
+            String orderAwbNo = order.getAwbNo();
+            if (orderAwbNo != null && orderAwbNo.equals(awb)) {
+                if (order.getOrderStatus().equals("packinglist generated")) {
+                    order.setOrderStatus("packed");
+                    orderService.updateOrder(order.getOrderId(), order);
+                    updatedOrders.add(order);
+                } else {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body("Packing list for Order with AWB " + awb + " is not generated.");
+                }
+            }
+        }
+
+        if (updatedOrders.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders with AWB " + awb + " found.");
+        }
+
+        return ResponseEntity.ok(updatedOrders);
+    }
+
 }

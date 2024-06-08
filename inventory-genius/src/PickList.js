@@ -15,6 +15,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MyTable from './MyTable.js';
 import 'jspdf-autotable';
 import Pagination from 'react-bootstrap/Pagination';
+import Form from 'react-bootstrap/Form';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 const PicklistComponent = () => {
   const [apiData, setApiData] = useState([]);
@@ -26,7 +29,64 @@ const PicklistComponent = () => {
   const [mergedPicklistData, setMergedPicklistData] = useState([]); 
   const [selectedOrderData, setSelectedOrderData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [bomCode, setBomCode] = useState("");
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [bomCodeList, setBomCodeList] = useState([]);
+  const rowsPerPageOptions = [5, 10, 20];
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [boms, setBoms] = useState({});
+  const [bomCodes, setBomCodes] = useState({});
+
+  useEffect(() => {
+    const fetchBomsForOrder = async (orderNo) => {
+      try {
+        const response = await axios.get(`http://localhost:8080/picklists/boms/${orderNo}`);
+        console.log("Fetched BOMs for order", orderNo, response.data);
+        setBoms(prevBoms => ({
+          ...prevBoms,
+          [orderNo]: response.data
+        }));
+
+        // Fetch the default BOM code for the orderNo
+        const bomCodeResponse = await axios.get(`http://localhost:8080/picklists/bom/default/bomCode?orderNo=${orderNo}`);
+        console.log("Response = " + bomCodeResponse.data);
+        setBomCodes(prevBomCodes => ({
+          ...prevBomCodes,
+          [orderNo]: bomCodeResponse.data
+        }));
+        console.log(`Initial BOM for order ${orderNo} = ${bomCodeResponse.data}`);
+      } catch (error) {
+        console.error(`Error fetching BOMs for order ${orderNo}:`, error);
+      }
+    };
+
+    if (orders.length > 0) {
+      orders.forEach(order => {
+        fetchBomsForOrder(order.orderNo);
+      });
+    }
+  }, [orders]);
+
+
+  // Function to handle change in items per page
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  
+  // JSX for the dropdown menu to select rows per page
+  const rowsPerPageDropdown = (
+    <Form.Group controlId="itemsPerPageSelect">
+      <Form.Select style={{marginLeft: "5px", width : "70px"}} value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        {rowsPerPageOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Select>
+    </Form.Group>
+  );
 
   useEffect (() => {
     axios.get('http://localhost:8080/picklists/orderData')
@@ -40,7 +100,7 @@ const PicklistComponent = () => {
   }, [])
 
   useEffect(() => {
-    axios.get('http://localhost:8080/orders/not/generated/orders')
+    axios.get('http://localhost:8080/picklists/not/generated/orders')
       .then(response => {
         setOrders(response.data);
       })
@@ -59,58 +119,77 @@ const PicklistComponent = () => {
       });
   }, []);
 
+  const sortedData = picklistData.sort((a, b) => {
+    if (sortConfig.key) {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+      return 0;
+    }
+    return picklistData;
+  });
+
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = picklistData.slice(indexOfFirstItem, indexOfLastItem);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handleCheckboxChange = (event, orderNo) => {
+
+  const handleCheckboxChange = async (event, orderNo, bomCode) => {
     console.log("in handle");
-    
+  
     if (orderNo === undefined) {
-      // If orderNo is undefined, it means the "Select All" checkbox is clicked
+      // "Select All" checkbox logic
       const allOrderNos = orders.map(order => order.orderNo);
       const updatedSelectedRows = event.target.checked ? allOrderNos : [];
       setSelectedRows(updatedSelectedRows);
   
-      // Fetch order data for all selected orders
       if (event.target.checked) {
-        // Create a promise chain to sequentially fetch order data for each selected order
-        const promises = allOrderNos.map(orderNo => (
-          axios.get(`http://localhost:8080/picklists/getSelectedOrderData?orderNo=${orderNo}`)
-        ));
-
-        console.log(event);
-        console.log("Affirmative");
+        const promises = orders.map(order =>
+          axios.get(`http://localhost:8080/picklists/getSelectedOrderData?orderNo=${order.orderNo}&bomCode=${bomCodes[order.orderNo]}`)
+        );
   
-        // Execute promises sequentially using reduce
-        promises.reduce((promiseChain, currentPromise) => {
-          return promiseChain.then(chainResults =>
-            currentPromise.then(currentResult =>
-              [...chainResults, currentResult]
-            )
-          );
-        }, Promise.resolve([]))
-        .then(results => {
-          // Concatenate order data from all promises into a single array
-          const orderData = results.reduce((acc, response) => [...acc, ...response.data], []);
-          // Set the fetched orderData to selectedOrderData state
-          setSelectedOrderData(orderData);
-        })
-        .catch(error => {
-          console.error('Error fetching order data:', error);
-          // Handle error as needed
-        });
+        Promise.all(promises)
+          .then(results => {
+            const orderData = results.reduce((acc, response) => [...acc, ...response.data], []);
+            setSelectedOrderData(orderData);
+          })
+          .catch(error => {
+            console.error('Error fetching order data:', error);
+          });
       } else {
-        // Clear selectedOrderData if no other individual checkboxes are checked
-        if (selectedRows.length === 0 || (selectedRows.length === 1 )) {
-          setSelectedOrderData([]);
+        setSelectedOrderData([]);
+      }
+    } else {
+      // Individual checkbox logic
+      const updatedSelectedRows = event.target.checked
+        ? [...selectedRows, orderNo]
+        : selectedRows.filter(row => row !== orderNo);
+  
+      setSelectedRows(updatedSelectedRows);
+  
+      if (event.target.checked) {
+        try {
+          const orderDataResponse = await axios.get(`http://localhost:8080/picklists/getSelectedOrderData?orderNo=${orderNo}&bomCode=${bomCode}`);
+          const orderData = orderDataResponse.data;
+          setSelectedOrderData(prevData => [...prevData, ...orderData]);
+        } catch (error) {
+          console.error('Error fetching BOM or order data:', error);
         }
-        console.log("Unselected");
+      } else {
+        setSelectedOrderData(prevData => prevData.filter(order => order.orderNo !== orderNo));
       }
     }
-   
   };
   
   
@@ -137,15 +216,42 @@ const PicklistComponent = () => {
   const generatePicklistWithNumber = (pickListNumber) => {
     // Filter the entire order objects instead of just the items
     const selectedOrders = orders.filter(order => selectedRows.includes(order.orderNo));
-
-    
+    const selectedOrderDatas = orderData.filter(orderData => selectedRows.includes(orderData.orderNo));
     console.log("selected rows = " + selectedRows);
 
+    console.log("selected ordersData = " + JSON.stringify(selectedOrderDatas));
+
+    console.log("setselectedorderData= " + JSON.stringify(selectedOrderData));
+
+    selectedOrderData.forEach(selectedOrderData => {
+      const selectedOrder = {
+          pickListNumber: pickListNumber,
+          date: selectedOrderData.date,
+          portalOrderNo: selectedOrderData.portalOrderNo,
+          orderNo: selectedOrderData.orderNo,
+          bomCode: selectedOrderData.bomCode,
+          portal: selectedOrderData.portal,
+          sellerSKU: selectedOrderData.sellerSKU,
+          qty: selectedOrderData.qty,
+          description: selectedOrderData.description,
+          binNumber: selectedOrderData.binNumber,
+          rackNumber: selectedOrderData.rackNumber,
+          pickQty: selectedOrderData.pickQty
+      };
+  
+      axios.post('http://localhost:8080/picklistdata', selectedOrder)
+          .then(response => {
+              console.log("after post" + response.data);
+          })
+          .catch(error => {
+              console.error('Error generating picklist data:', error);
+          });
+  });
+    
     // Assuming your API endpoint for generating a picklist is '/generate-picklist'
-    axios.post('http://localhost:8080/picklists', { pickListNumber, orders: selectedOrders })
+    axios.post('http://localhost:8080/picklists', { pickListNumber, orders: selectedOrders})
       .then(response => {
         console.log('Picklist generated successfully:', response.data);
-        
         
         toast.success('PickList generated successfully', {
           autoClose: 2000 
@@ -156,8 +262,8 @@ const PicklistComponent = () => {
         console.error('Error generating picklist:', error);
         toast.error('Failed to generate PickList: ' + error.message);
       });
+};
 
-  };
 
 
 const selected = (selectedOrders) => {
@@ -222,19 +328,18 @@ const generatePicklistPDF1 = async () => {
 };
 
 
-const handleDelete = (id) => {
-  console.log("Deleting row with id:", id);
+const handleDelete = (pickListNumber) => {
+  console.log("Deleting row with picklist number:", pickListNumber);
   // Remove the row from the table
 
-  axios.delete(`http://localhost:8080/picklists/${id}`)
+  axios.delete(`http://localhost:8080/picklistdata/picklistnumber/${pickListNumber}`)
   .then(response => {
     // Handle success response
     console.log('Row deleted successfully.');
     toast.success('PickList deleted successfully', {
       autoClose: 2000 // Close after 2 seconds
     });
-    setPicklistData(prevData => prevData.filter(row => row.stockId !== id));
-
+    setPicklistData(prevData => prevData.filter(row => row.pickListNumber !== pickListNumber));
   })
   .catch(error => {
     // Handle error
@@ -290,6 +395,26 @@ const handleDownload1 = async (pickListNumber) => {
 
       // Create a new PDF instance
       const pdf = new jsPDF();
+
+      const logoURL = 'https://media.licdn.com/dms/image/D560BAQF6CchqkqZEEQ/company-logo_200_200/0/1704887637105/techjyot___india_logo?e=2147483647&v=beta&t=S1jLov5GABl39n8XPksGcm8GIQsmvMTLl84RwYZNL-8'; // Replace with your actual base64 or URL
+      pdf.addImage(logoURL, 'PNG', 10, 10, 30, 15); // Adjust the position and size as needed
+
+      // Add heading
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('PickList', pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+
+      // Add current date
+      const currentDate = new Date();
+      const formattedDate = `${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(formattedDate, pdf.internal.pageSize.getWidth() - 50, 20);
+
+      // Add PackingList Number
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`PickList Number: ${pickListNumber}`, 15, 35);
       
       // Set font size and style for the table
       pdf.setFontSize(12);
@@ -316,7 +441,7 @@ const handleDownload1 = async (pickListNumber) => {
       }));
 
       // Add table to PDF
-      pdf.autoTable({ columns, body: rows });
+      pdf.autoTable({ columns, body: rows, startY: 40  });
 
       // Save the PDF with a specified name
       pdf.save(`picklist_${pickListNumber}.pdf`);
@@ -335,6 +460,10 @@ const formatDate = (dateString) => {
   return `${day}-${month}-${year}`;
 };
 
+const handleDropdownChange = (event, orderNo) => {
+  // Handle dropdown change
+  console.log(`Selected ${event.target.value} for order ${orderNo}`);
+};
 
 
   return (
@@ -357,53 +486,73 @@ const formatDate = (dateString) => {
         <Table striped bordered hover className='custom-table'>
   <thead>
     <tr>
-    <th>
-      <input
-        type="checkbox"
-        id={`checkbox-${uuidv4()}`}
-        checked={selectedRows.length === orders.length} // Check if all rows are selected
-        onChange={(event) => handleCheckboxChange(event)}
-      />
-    </th>
+      <th>
+        <input
+          type="checkbox"
+          id={`checkbox-${uuidv4()}`}
+          checked={selectedRows.length === orders.length} // Check if all rows are selected
+          onChange={(event) => handleCheckboxChange(event)}
+        />
+      </th>
       <th>Date</th>
       <th>Order No</th>
       <th>Porta Order No</th>
       <th>Portal</th>
       <th>Seller SKU</th>
       <th>Order Qty</th>
-      
+      <th>Bom Code</th>
     </tr>
   </thead>
   <tbody>
-  {orders.map(order => (
-    <tr key={uuidv4()} onClick={(event) => handleRowClick(event, order.orderNo)}>
-      <td>
-        <input
-          type="checkbox"
-          id={`checkbox-${uuidv4()}`}
-          checked={selectedRows.includes(order.orderNo)}
-          onChange={(event) => handleCheckboxChange(event, order.orderNo)}
-        />
-      </td>
-      <td>
-        {(() => {
-          const date = new Date(order.date);
-          const day = String(date.getDate()).padStart(2, '0');
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const year = date.getFullYear();
-          return `${day}-${month}-${year}`;
-        })()}
-      </td>
-      <td>{order.orderNo}</td>
-      <td>{order.portalOrderNo}</td>
-      <td>{order.portal}</td>
-      <td>{order.sellerSKU}</td>
-      <td>{order.qty}</td>
-      
-    </tr>
-  ))}
-</tbody>
+    {orders.map(order => (
+      <tr key={uuidv4()}>
+        <td>
+          <input
+            type="checkbox"
+            id={`checkbox-${uuidv4()}`}
+            checked={selectedRows.includes(order.orderNo)}
+            onChange={(event) => handleCheckboxChange(event, order.orderNo, bomCodes[order.orderNo])}
+          />
+        </td>
+        <td>
+          {(() => {
+            const date = new Date(order.date);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+          })()}
+        </td>
+        <td>{order.orderNo}</td>
+        <td>{order.portalOrderNo}</td>
+        <td>{order.portal}</td>
+        <td>{order.sellerSKU}</td>
+        <td>{order.qty}</td>
+        <td>
+          <Form.Select
+            required
+            onChange={(e) => {
+              const { value } = e.target;
+              setBomCodes(prevBomCodes => ({
+                ...prevBomCodes,
+                [order.orderNo]: value
+              }));
+            }}
+            value={bomCodes[order.orderNo] || ''}
+          >
+            <option value=''>{bomCodes[order.orderNo] || 'Select Bom Code'}</option>
+            {boms[order.orderNo]?.map((sku) => (
+              <option key={sku.bomId} value={sku.bomCode}>
+                {sku.bomCode}
+              </option>
+            )) || <option>Loading...</option>}
+          </Form.Select>
+        </td>
+      </tr>
+    ))}
+  </tbody>
 </Table>
+
 
 
 {selectedRows.length > 0 && (
@@ -434,74 +583,103 @@ const formatDate = (dateString) => {
     <tr>
       <th></th>
       <th></th>
-      <th>Pick List Number</th>
-      <th>Date</th>
-      <th>Seller SKU</th>
-      <th>Order Qty</th>
-      <th>Pick Qty</th>
-      <th>Bin Number</th>
-      <th>Rack Number</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('pickListNumber')}>
+                  </SwapVertIcon>
+        Pick List Number</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('date')}>
+                  </SwapVertIcon>
+        Date</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('sellerSKU')}>
+                  </SwapVertIcon>
+        Seller SKU</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('qty')}>
+                  </SwapVertIcon>
+        Order Qty</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('pickQty')}>
+                  </SwapVertIcon>
+        Pick Qty</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('binNumber')}>
+                  </SwapVertIcon>
+        Bin Number</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('rackNumber')}>
+                  </SwapVertIcon>
+        Rack Number</th>
     </tr>
   </thead>
   <tbody>
-    {picklistData.map((picklist, index) => {
-      const rowsForPickListNumber = picklistData.filter(
-        p => p.pickListNumber === picklist.pickListNumber
-      ).length;
+  {picklistData.map((picklist, index) => {
+    const rowsForPickListNumber = picklistData.filter(
+      p => p.pickListNumber === picklist.pickListNumber
+    ).length;
 
-      const deleteButtonCell = index % rowsForPickListNumber === 0 ? (
-        <td rowSpan={rowsForPickListNumber} style={{ width: '50px', textAlign: 'center' }}>
-          <button
-              style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
-              className="delete-icon"
-              onClick={(e) => {
-                e.stopPropagation(); 
-                handleDelete(picklist.pickListId); 
-              }}
-            >
-              <DeleteIcon style={{ color: '#F00' }} />
-            </button>
+    const isFirstRowForPickListNumber = index === picklistData.findIndex(
+      p => p.pickListNumber === picklist.pickListNumber
+    );
+
+    const deleteButtonCell = isFirstRowForPickListNumber ? (
+      <td rowSpan={rowsForPickListNumber} style={{ width: '50px', textAlign: 'center' }}>
+        <button
+          style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
+          className="delete-icon"
+          onClick={(e) => {
+            e.stopPropagation(); 
+            handleDelete(picklist.pickListNumber); 
+          }}
+        >
+          <DeleteIcon style={{ color: '#F00' }} />
+        </button>
+      </td>
+    ) : null;
+
+    const downloadButtonCell = isFirstRowForPickListNumber ? (
+      <td rowSpan={rowsForPickListNumber}>
+        <button onClick={() => handleDownload1(picklist.pickListNumber)}>Download</button>
+      </td>
+    ) : null;
+
+    return (
+      <tr key={`${picklist.pickListId}-${index}`}>
+        {deleteButtonCell}
+        {downloadButtonCell}
+        {isFirstRowForPickListNumber && <td rowSpan={rowsForPickListNumber}>{picklist.pickListNumber}</td>}
+        <td>
+          {(() => {
+            const date = new Date(picklist.date);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+          })()}
         </td>
-      ) : null;
+        <td>{picklist.sellerSKU}</td>
+        <td>{picklist.qty}</td>
+        <td>{picklist.pickQty}</td>
+        <td>{picklist.binNumber || "N/A"}</td>
+        <td>{picklist.rackNumber || "N/A"}</td>
+      </tr>
+    );
+  })}
+</tbody>
 
-      const downloadButtonCell = index % rowsForPickListNumber === 0 ? (
-        <td rowSpan={rowsForPickListNumber}>
-          <button onClick={() => handleDownload1(picklist.pickListNumber)}>Download</button>
-        </td>
-      ) : null;
-
-      return (
-        <tr key={`${picklist.pickListId}-${index}`}>
-          {deleteButtonCell}
-          {downloadButtonCell}
-          {index % rowsForPickListNumber === 0 && <td rowSpan={rowsForPickListNumber}>{picklist.pickListNumber}</td>}
-          <td>
-            {(() => {
-              const date = new Date(picklist.date);
-              const day = String(date.getDate()).padStart(2, '0');
-              const month = String(date.getMonth() + 1).padStart(2, '0');
-              const year = date.getFullYear();
-              return `${day}-${month}-${year}`;
-            })()}
-          </td>
-          <td>{picklist.sellerSKU}</td>
-          <td>{picklist.qty}</td>
-          <td>{picklist.pickQty}</td>
-          <td>{picklist.binNumber || "N/A"}</td>
-          <td>{picklist.rackNumber || "N/A"}</td>
-        </tr>
-      );
-    })}
-  </tbody>
 </Table>
 
-<Pagination>
-            {Array.from({ length: Math.ceil(picklistData.length / itemsPerPage) }).map((_, index) => (
-              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
-                {index + 1}
-              </Pagination.Item>
-            ))}
-          </Pagination>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {rowsPerPageDropdown}
+            <Pagination>
+              {Array.from({ length: Math.ceil(picklistData.length / itemsPerPage) }).map((_, index) => (
+                <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+            </Pagination>
+          </div>
 
       </AccordionDetails>
       </Accordion>

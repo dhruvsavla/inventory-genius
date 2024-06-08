@@ -19,6 +19,11 @@ import 'react-datepicker/dist/react-datepicker.css';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import Pagination from 'react-bootstrap/Pagination';
+import { saveAs } from 'file-saver';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 function Return() {
   const [validated, setValidated] = useState(false);
@@ -44,7 +49,28 @@ function Return() {
   const [searchTermOkStock, setSeaarchTermOkStock] = useState("");
   const [searchTermSentForRaisingTicketOn, setSeaarchTermSentForRaisingTicketOn] = useState("");
   const [searchTermSentForTicketOn, setSeaarchTermSentForTicketOn] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const rowsPerPageOptions = [5, 10, 20];
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
   
+  // JSX for the dropdown menu to select rows per page
+  const rowsPerPageDropdown = (
+    <Form.Group controlId="itemsPerPageSelect">
+      <Form.Select style={{marginLeft: "5px", width : "70px"}} value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        {rowsPerPageOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Select>
+    </Form.Group>
+  );
+
   useEffect(() => {
     const currentDate = new Date(); // Get current date
     const year = currentDate.getFullYear(); // Get current year
@@ -69,6 +95,12 @@ function Return() {
 
       );
   });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -274,6 +306,22 @@ const handleDelete = (id) => {
 
 
   console.log("After deletion, apiData:", apiData);
+};
+
+const exportToExcel = () => {
+  const ws = XLSX.utils.json_to_sheet(filteredData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+  function s2ab(s) {
+    const buf = new ArrayBuffer(s.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+    return buf;
+  }
+
+  saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'ReturnsData.xlsx');
 };
 
     return (
@@ -558,6 +606,29 @@ const handleDelete = (id) => {
               ))}
             </tbody>
           </Table>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+          <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: '#5463FF', color: 'white', fontWeight: 'bolder' }}
+              onClick={exportToExcel}
+            >
+              {<FileDownloadIcon style={{marginBottom: "5px"}}/>} Export to Excel
+            </Button>
+
+            
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {rowsPerPageDropdown}
+            
+            <Pagination>
+              {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+                <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+            </Pagination>
+          </div>
+          </div>
           </div>
         </AccordionDetails>
       </Accordion>

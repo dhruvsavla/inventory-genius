@@ -10,6 +10,7 @@ import com.example.inventorygenius.entity.StockInward;
 import com.example.inventorygenius.entity.Storage;
 import com.example.inventorygenius.repository.StockInwardRepository;
 import com.example.inventorygenius.repository.StockRepository;
+import com.example.inventorygenius.repository.StorageRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,12 @@ public class StockInwardService {
     @Autowired
     private StockCountService stockCountService;
 
+    @Autowired
+    private StorageRepository storageRepository;
+
+    @Autowired
+    private StorageService storageService;
+
     // Method to add a new item
     public StockInward addStockInward(StockInward stockInward) {
         // Save the StockInward
@@ -49,7 +56,15 @@ public class StockInwardService {
 
     public void deleteStockInwardById(Long id) {
         StockInward SI = findById(id);
-    
+        String sku = SI.getSkucode();
+
+        // Check if SKU code is present in any storage
+        for (Storage storage : storageService.getAllStorage()){
+            if (storage.getSkucode().equals(SI.getSkucode())){
+                throw new IllegalStateException("Cannot delete StockInward because the SKU code is present in Storage.");
+            }
+        }
+        
         // Create a new Stock object
         Stock stock = new Stock();
         stock.setDate(SI.getDate());
@@ -70,6 +85,7 @@ public class StockInwardService {
         double additionalCount = Double.parseDouble(SI.getQty());
         stockCount.setCount(currentCount - additionalCount);
         // Delete the StockInward
+        //SI.setStock(null);
         stockInwardRepository.deleteById(id);
     }
     
@@ -84,7 +100,6 @@ public class StockInwardService {
         stockInward.setQty(stockInwardDetails.getQty());
         stockInward.setStock(stockInwardDetails.getStock());
 
-    
         return stockInwardRepository.save(stockInward);
     }
 

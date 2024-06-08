@@ -16,6 +16,9 @@ import Header from './Header.js';
 import Dispatch from './Dispatch.js';
 import Storage from './Storage.js'
 import StockCount from './StockCount.js';
+import DispatchScan from './DispatchScan.js';
+import PackScan from './PackScan.js';
+import BomItem from './BomItem.js';
 
 function App() {
   return (
@@ -37,6 +40,9 @@ function App() {
           <Route path="/dispatch" element={<Dispatch />} />
           <Route path="/storage" element={<Storage/>} />
           <Route path="/stockCount" element={<StockCount/>} />
+          <Route path="/dispatchScan" element={<DispatchScan/>} />
+          <Route path="/packScan" element={<PackScan/>} />
+          <Route path="/bomItem" element={<BomItem/>} />
         </Routes>
     </Router>
     </div>

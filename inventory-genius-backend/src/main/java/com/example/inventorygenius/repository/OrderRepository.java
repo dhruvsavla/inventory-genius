@@ -13,5 +13,5 @@ import com.example.inventorygenius.entity.Order;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT DISTINCT o FROM Order o JOIN FETCH o.items")
     List<Order> findAllWithItems();
-    Optional<Order> findByOrderNo(String orderNo);
+    List<Order> findByOrderNo(String orderNo);
 }

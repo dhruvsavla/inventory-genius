@@ -12,6 +12,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import DeleteIcon from '@mui/icons-material/Delete';
+import Form from 'react-bootstrap/Form';
+import Pagination from 'react-bootstrap/Pagination';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 const PicklistComponent = () => {
   const [apiData, setApiData] = useState([]);
@@ -19,6 +23,30 @@ const PicklistComponent = () => {
   const [picklistData, setPicklistData] = useState([]);
   const [orderData, setOrderData] = useState([]);
   const [orders, setOrders] = useState([]);
+  const rowsPerPageOptions = [5, 10, 20];
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [selectedOrderData, setSelectedOrderData] = useState([]);
+
+  // Function to handle change in items per page
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+  
+  // JSX for the dropdown menu to select rows per page
+  const rowsPerPageDropdown = (
+    <Form.Group controlId="itemsPerPageSelect">
+      <Form.Select style={{marginLeft: "5px", width : "70px"}} value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        {rowsPerPageOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Select>
+    </Form.Group>
+  );
 
   useEffect (() => {
     axios.get('http://localhost:8080/packinglist/orderData')
@@ -32,7 +60,7 @@ const PicklistComponent = () => {
   }, [])
 
   useEffect(() => {
-    axios.get('http://localhost:8080/orders/not/generated/packinglist/orders')
+    axios.get('http://localhost:8080/packinglist/not/generated/packinglist/orders')
       .then(response => {
         setOrders(response.data);
       })
@@ -53,21 +81,69 @@ const PicklistComponent = () => {
       });
   }, []);
 
+  const sortedData = picklistData.sort((a, b) => {
+    if (sortConfig.key) {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+      return 0;
+    }
+    return picklistData;
+  });
 
-const handleCheckboxChange = (event, itemId) => {
-  if (itemId === undefined) {
-    // If itemId is undefined, it means the checkbox in the header is clicked
-    const allOrderNos = orderData.map(order => order.orderNo);
-    const updatedSelectedRows = event.target.checked ? allOrderNos : [];
-    setSelectedRows(updatedSelectedRows);
-  } else {
-    // If itemId is defined, it means a checkbox in a row is clicked
-    const updatedSelectedRows = event.target.checked
-      ? [...selectedRows, itemId]
-      : selectedRows.filter(id => id !== itemId);
-    setSelectedRows(updatedSelectedRows);
-  }
-};
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+
+  const handleCheckboxChange = async (event, itemId) => {
+    if (itemId === undefined) {
+      // If itemId is undefined, it means the checkbox in the header is clicked
+      const allOrderNos = orders.map(order => order.orderNo);
+      const updatedSelectedRows = event.target.checked ? allOrderNos : [];
+      setSelectedRows(updatedSelectedRows);
+  
+      if (event.target.checked) {
+        try {
+          const promises = allOrderNos.map(orderNo =>
+            axios.get(`http://localhost:8080/packinglist/selected/orderData?orderNo=${orderNo}`)
+          );
+          const results = await Promise.all(promises);
+          const orderData = results.map(response => response.data);
+          setSelectedOrderData(orderData);
+        } catch (error) {
+          console.error('Error fetching order data:', error);
+        }
+      } else {
+        setSelectedOrderData([]);
+      }
+    } else {
+      // If itemId is defined, it means a checkbox in a row is clicked
+      const isChecked = event.target.checked;
+      const updatedSelectedRows = isChecked
+        ? [...selectedRows, itemId]
+        : selectedRows.filter(id => id !== itemId);
+      setSelectedRows(updatedSelectedRows);
+  
+      if (isChecked) {
+        try {
+          const response = await axios.get(`http://localhost:8080/packinglist/selected/orderData?orderNo=${itemId}`);
+          const orderData = response.data;
+          setSelectedOrderData(prevData => [...prevData, orderData]);
+        } catch (error) {
+          console.error('Error fetching order data:', error);
+        }
+      } else {
+        setSelectedOrderData(prevData => prevData.filter(order => order.orderNo !== itemId));
+      }
+    }
+  };
+  
 
   
   const generatePicklist = () => {
@@ -93,15 +169,39 @@ const handleCheckboxChange = (event, itemId) => {
   const generatePicklistWithNumber = (packingListNumber) => {
     // Filter the entire order objects instead of just the items
     const selectedOrders = orders.filter(order => selectedRows.includes(order.orderNo));
-
-    
+  
     console.log("selected rows = " + selectedRows);
+    console.log("selected order data = " + JSON.stringify(selectedOrderData));
+  
+    // Map the selected order data to the desired format
+const selectedOrder = selectedOrderData[0].map(order => ({
+  packListNumber: packingListNumber,
+  date: order.date,
+  portalOrderNo: order.portalOrderNo,
+  orderNo: order.orderNo,
+  bomCode: order.bomCode,
+  portal: order.portal,
+  sellerSKU: order.sellerSKU,
+  qty: order.qty,
+  description: order.description,
+  packQty: order.pickQty
+}));
+
+// Loop through each selected order and post it individually
+selectedOrder.forEach(order => {
+  axios.post('http://localhost:8080/packinglistdata', order)
+    .then(response => {
+      console.log("after post" + JSON.stringify(response.data));
+    })
+    .catch(error => {
+      console.error('Error generating picklist data:', error);
+    });
+});
 
     // Assuming your API endpoint for generating a picklist is '/generate-picklist'
     axios.post('http://localhost:8080/packinglist', { packingListNumber, orders: selectedOrders })
       .then(response => {
         console.log('Picklist generated successfully:', response.data);
-       // setPicklistData([...picklistData, response.data]);
         toast.success('PickList generated successfully', {
           autoClose: 2000 // Close after 2 seconds
         });
@@ -111,8 +211,8 @@ const handleCheckboxChange = (event, itemId) => {
         console.error('Error generating picklist:', error);
         toast.error('Failed to generate PickList: ' + error.message);
       });
-
   };
+  
 
 
   const generatePicklistPDF = async () => {
@@ -179,18 +279,18 @@ const handleCheckboxChange = (event, itemId) => {
         });
 };
 
-const handleDelete = (id) => {
-  console.log("Deleting row with id:", id);
+const handleDelete = (packingListNumber) => {
+  console.log("Deleting row with packingListNumber:", packingListNumber);
   // Remove the row from the table
 
-  axios.delete(`http://localhost:8080/packinglist/${id}`)
+  axios.delete(`http://localhost:8080/packinglistdata/packinglistData/${packingListNumber}`)
   .then(response => {
     // Handle success response
     console.log('Row deleted successfully.');
     toast.success('PackingList deleted successfully', {
       autoClose: 2000 // Close after 2 seconds
     });
-    setPicklistData(prevData => prevData.filter(row => row.stockId !== id));
+    setPicklistData(prevData => prevData.filter(row => row.packingListNumber !== packingListNumber));
 
   })
   .catch(error => {
@@ -202,13 +302,16 @@ const handleDelete = (id) => {
   console.log("After deletion, apiData:", apiData);
 };
 
-const handleRowClick = (event, orderNo) => {
-  const isChecked = selectedRows.includes(orderNo);
-  const updatedSelectedRows = isChecked
-    ? selectedRows.filter(id => id !== orderNo)
-    : [...selectedRows, orderNo];
-  setSelectedRows(updatedSelectedRows);
-};
+// const handleRowClick = (event, order) => {
+//   const isChecked = selectedRows.includes(order.orderNo);
+//   const updatedSelectedRows = isChecked
+//     ? selectedRows.filter(id => id !== order.orderNo)
+//     : [...selectedRows, order.orderNo];
+
+//   setSelectedRows(updatedSelectedRows);
+
+// };
+
 
 const handleDownload = async (pickListNumber) => {
   console.log("pickData = " + JSON.stringify(picklistData));
@@ -255,6 +358,12 @@ orders.forEach((order, index) => {
   }
 };
 
+const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = picklistData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
 const handleDownload1 = async (pickListNumber) => {
   try {
       const picklistItems = picklistData.filter(picklist => picklist.pickListNumber === pickListNumber);
@@ -266,23 +375,40 @@ const handleDownload1 = async (pickListNumber) => {
 
       // Create a new PDF instance
       const pdf = new jsPDF();
-      
-      // Set font size and style for the table
-      pdf.setFontSize(12);
+
+      // Add a company logo (example logo URL)
+      const logoURL = 'https://media.licdn.com/dms/image/D560BAQF6CchqkqZEEQ/company-logo_200_200/0/1704887637105/techjyot___india_logo?e=2147483647&v=beta&t=S1jLov5GABl39n8XPksGcm8GIQsmvMTLl84RwYZNL-8'; // Replace with your actual base64 or URL
+      pdf.addImage(logoURL, 'PNG', 10, 10, 30, 15); // Adjust the position and size as needed
+
+      // Add heading
+      pdf.setFontSize(18);
       pdf.setFont('helvetica', 'bold');
+      pdf.text('Packinglist', pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+
+      // Add current date
+      const currentDate = new Date();
+      const formattedDate = `${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(formattedDate, pdf.internal.pageSize.getWidth() - 50, 20);
+
+      // Add PackingList Number
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`PackingList Number: ${pickListNumber}`, 15, 35);
 
       // Define table columns
       const columns = [
-          { title: "Date", dataKey: "date" },
+          {title: "Date", dataKey: "date"},
           { title: "Portal", dataKey: "portal" },
           { title: "Portal Order No", dataKey: "portalOrderNo" },
           { title: "Order Qty", dataKey: "qty" },
           { title: "Pack Qty", dataKey: "pickQty" },
       ];
 
-      // Define table rows
+      // Define table rows with merged data
       const rows = picklistItems.map(item => ({
-          date: formatDate(item.date), // Format the date
+          date: formatDate(item.date),
           portal: item.portal,
           portalOrderNo: item.portalOrderNo,
           qty: item.qty,
@@ -290,7 +416,7 @@ const handleDownload1 = async (pickListNumber) => {
       }));
 
       // Add table to PDF
-      pdf.autoTable({ columns, body: rows });
+      pdf.autoTable({ columns, body: rows, startY: 40 }); // Start table after the header
 
       // Save the PDF with a specified name
       pdf.save(`packlist_${pickListNumber}.pdf`);
@@ -299,6 +425,8 @@ const handleDownload1 = async (pickListNumber) => {
       console.error("Error generating PDF:", error);
   }
 };
+
+
 
 const generatePicklistPDF1 = async () => {
   try {
@@ -384,7 +512,8 @@ const formatDate = (dateString) => {
   </thead>
   <tbody>
   {orders.map(order => (
-    <tr key={uuidv4()} onClick={(event) => handleRowClick(event, order.orderNo)}>
+    // <tr key={uuidv4()} onClick={(event) => handleRowClick(event, order.orderNo)}>
+    <tr>
       <td>
         <input
           type="checkbox"
@@ -472,20 +601,38 @@ const formatDate = (dateString) => {
     <tr>
       <th></th>
       <th></th>
-      <th>Pack List Number</th>
-      <th>Date</th>
-      <th>Portal Order No</th>
-      <th>Portal</th>
-      <th>Order Qty</th>
-      <th>Pack Qty</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('pickListNumber')}>
+                  </SwapVertIcon>
+        Pack List Number</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('date')}>
+                  </SwapVertIcon>
+        Date</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portalOrderNo')}>
+                  </SwapVertIcon>
+        Portal Order No</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portal')}>
+                  </SwapVertIcon>
+        Portal</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('qty')}>
+                  </SwapVertIcon>
+        Order Qty</th>
+      <th>
+      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('pickQty')}>
+                  </SwapVertIcon>
+        Pack Qty</th>
     </tr>
   </thead>
   <tbody>
     {picklistData.map((picklist, index) => {
-      const rowspan = picklistData.filter(p => p.pickListNumber === picklist.pickListNumber).length;
+      const rowspan = picklistData.filter(p => p.packListNumber === picklist.packListNumber).length;
       return (
         <tr key={`${picklist.pickListId}-${index}`}>
-          {index === 0 || picklist.pickListNumber !== picklistData[index - 1].pickListNumber ? (
+          {index === 0 || picklist.packListNumber !== picklistData[index - 1].packListNumber ? (
             <>
               <td rowSpan={rowspan} style={{ width: '50px', textAlign: 'center' }}>
                 <button
@@ -493,18 +640,18 @@ const formatDate = (dateString) => {
                   className="delete-icon"
                   onClick={(e) => {
                     e.stopPropagation(); 
-                    handleDelete(picklist.pickListId); 
+                    handleDelete(picklist.packListNumber); 
                   }}
                 >
                   <DeleteIcon style={{ color: '#F00' }} />
                 </button>
               </td>
-              {index === 0 || picklist.pickListNumber !== picklistData[index - 1].pickListNumber ? (
+              {index === 0 || picklist.packListNumber !== picklistData[index - 1].packListNumber ? (
             <td rowSpan={rowspan}>
-              <button onClick={() => handleDownload1(picklist.pickListNumber)}>Download</button>
+              <button onClick={() => handleDownload1(picklist.packListNumber)}>Download</button>
             </td>
           ) : null}
-              <td rowSpan={rowspan}>{picklist.pickListNumber}</td>
+              <td rowSpan={rowspan}>{picklist.packListNumber}</td>
             </>
           ) : null}
           
@@ -520,14 +667,23 @@ const formatDate = (dateString) => {
           <td>{picklist.portalOrderNo}</td>
           <td>{picklist.portal}</td>
           <td>{picklist.qty}</td>
-          <td>{picklist.pickQty}</td>
+          <td>{picklist.packQty}</td>
         </tr>
       );
     })}
   </tbody>
 </Table>
 
-
+<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {rowsPerPageDropdown}
+            <Pagination>
+              {Array.from({ length: Math.ceil(picklistData.length / itemsPerPage) }).map((_, index) => (
+                <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+            </Pagination>
+          </div>
       </AccordionDetails>
       </Accordion>
     </div>

@@ -27,11 +27,11 @@ public class OrderService {
     @Autowired
     private StockService stockService;
 
-    @Autowired
-    private PickListService pickListService;
+    // @Autowired
+    // private PickListService pickListService;
 
-    @Autowired
-    private PackingListService packListService;
+    // @Autowired
+    // private PackingListService packListService;
 
     // Method to add a new item
     public Order addOrder(Order order) {
@@ -94,67 +94,17 @@ public class OrderService {
             existingOrder.setCourier(updatedOrder.getCourier());
             existingOrder.setCancel(updatedOrder.getCancel());
             existingOrder.setItems(updatedOrder.getItems());
-
+            existingOrder.setAwbNo(updatedOrder.getAwbNo());
+            existingOrder.setOrderStatus(updatedOrder.getOrderStatus());
             return orderRepository.save(existingOrder);
         } else {
             return null;
         }
     }
 
-    public Order findByOrderNo(String orderNo) {
-        return orderRepository.findByOrderNo(orderNo)
-                .orElseThrow(() -> new NoSuchElementException("Order not found with orderNo: " + orderNo));
+    public List<Order> findByOrderNo(String orderNo) {
+        return orderRepository.findByOrderNo(orderNo);
     }
 
-    public List<Order> getAllNotGeneratedOrders() {
-        List<Order> notGeneratedOrders = new ArrayList<>();
-        List<Order> allOrders = getAllOrders();
-        List<PickList> allPickLists = pickListService.getAllPickLists();
-        
-        // Create a set to store order numbers that are in pick lists
-        Set<String> orderNumbersInPickLists = new HashSet<>();
-        
-        // Iterate through all pick lists and collect order numbers
-        for (PickList p : allPickLists) {
-            for (Order or : p.getOrders()) {
-                orderNumbersInPickLists.add(or.getOrderNo());
-            }
-        }
-        
-        // Iterate through all orders and add those that are not in any pick list and are not canceled
-        for (Order o : allOrders) {
-            if (!orderNumbersInPickLists.contains(o.getOrderNo()) && 
-                !"Order Canceled".equals(o.getCancel())) { // Check if order is not in any pick list and not canceled
-                notGeneratedOrders.add(o);
-            }
-        }
-        
-        return notGeneratedOrders;
-    }
-     
-    public List<Order> getAllNotGeneratedPackListOrders() {
-        List<Order> notGeneratedOrders = new ArrayList<>();
-        List<Order> allOrders = getAllOrders();
-        List<PackingList> allPackLists = packListService.getAllPickLists();
-        
-        // Create a set to store order numbers that are in pick lists
-        Set<String> orderNumbersInPickLists = new HashSet<>();
-        
-        // Iterate through all pick lists and collect order numbers
-        for (PackingList p : allPackLists) {
-            for (Order or : p.getOrders()) {
-                orderNumbersInPickLists.add(or.getOrderNo());
-            }
-        }
-        
-        // Iterate through all orders and add those that are not in any pick list and are not canceled
-        for (Order o : allOrders) {
-            if (!orderNumbersInPickLists.contains(o.getOrderNo()) && 
-                !"Order Canceled".equals(o.getCancel())) { // Check if order is not in any pick list and not canceled
-                notGeneratedOrders.add(o);
-            }
-        }
-        
-        return notGeneratedOrders;
-    }
+    
 }

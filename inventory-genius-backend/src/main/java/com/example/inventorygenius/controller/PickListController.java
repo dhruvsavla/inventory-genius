@@ -22,6 +22,8 @@ import com.example.inventorygenius.entity.PickListData;
 import com.example.inventorygenius.entity.Stock;
 import com.example.inventorygenius.entity.StockCount;
 import com.example.inventorygenius.entity.Storage;
+import com.example.inventorygenius.entity.BomItem;
+
 import com.example.inventorygenius.repository.PickListRepository;
 import com.example.inventorygenius.service.BomService;
 import com.example.inventorygenius.service.ItemSupplierService;
@@ -34,6 +36,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 
 
 @RestController
@@ -61,7 +69,13 @@ public class PickListController {
     @Autowired
     private ItemSupplierService itemSupplierService;
 
-    @Autowired StorageService storageService;
+    @Autowired 
+    private StorageService storageService;
+
+    @GetMapping("/not/generated/orders")
+    public List<Order> getNotGeneratedOrders() {
+        return pickListService.getAllNotGeneratedOrders();
+    } 
 
     @GetMapping
     public ResponseEntity<List<PickList>> getAllPickLists() {
@@ -82,6 +96,9 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
      PickList createdPickList = pickListService.createPickList(pickList);
     
      for (Order order : pickList.getOrders()){    
+        order.setOrderStatus("picklist generated");
+        orderService.updateOrder(order.getOrderId(), order); 
+
         Stock stock = new Stock();
         Item item = itemSupplierService.getItemBySKUCode(order.getItems().get(0).getSKUCode());
         if(item.getBoms().size() > 0){
@@ -89,16 +106,17 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
             stock.setSkucode(item.getParentSKU());
             stock.setAddQty("0");
             for (Bom bom : item.getBoms()){
-                if (bom.getBomItem().equals(item.getParentSKU())){
-                    stock.setSubQty(String.valueOf(order.getQty() * bom.getQty()));
+                for (BomItem bomItem : bom.getItemsInBom()){
+                if (bomItem.getBomItem().equals(item.getParentSKU())){
+                    stock.setSubQty(String.valueOf(order.getQty() * Double.parseDouble(bomItem.getQty())));
                 }
-                if (!bom.getBomItem().equals(item.getParentSKU())){
+                if (!bomItem.getBomItem().equals(item.getParentSKU())){
                     Stock s = new Stock();
                     s.setDate(new Date());
                     s.setAddQty("0");
                     s.setItem(item);
-                    s.setSubQty(String.valueOf(order.getQty() * bom.getQty()));
-                    s.setSkucode(bom.getBomItem());
+                    s.setSubQty(String.valueOf(order.getQty() * Double.parseDouble(bomItem.getQty())));
+                    s.setSkucode(bomItem.getBomItem());
                     s.setSource("picklist/order");
                     s.setMessage("pickList generated for order");
                     s.setNumber("pickList Number = " + pickList.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
@@ -111,6 +129,7 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
             stock.setSource("picklist/order");
             stock.setMessage("pickList generated for order");
             stock.setNumber("pickList Number = " + pickList.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
+            }
         }
         else {
             stock.setDate(new Date());
@@ -132,20 +151,22 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
         if (order.getItems().get(0).getBoms().size() > 0){
             skuCode += order.getItems().get(0).getParentSKU();
             for (Bom bom : order.getItems().get(0).getBoms()){
-                if (bom.getBomItem().equals(order.getItems().get(0).getParentSKU())){
-                    additionalCount = Double.parseDouble(String.valueOf(order.getQty())) * bom.getQty();
+                for(BomItem bomItem : bom.getItemsInBom()){
+                if (bomItem.getBomItem().equals(order.getItems().get(0).getParentSKU())){
+                    additionalCount = Double.parseDouble(String.valueOf(order.getQty())) * Double.parseDouble(bomItem.getQty());
                 }
-                if (!(bom.getBomItem().equals(order.getItems().get(0).getParentSKU()))){
+                if (!(bomItem.getBomItem().equals(order.getItems().get(0).getParentSKU()))){
                     StockCount scBom = new StockCount();
-                    scBom = stockCountService.getStockCountBySKUCode(bom.getBomItem());
+                    scBom = stockCountService.getStockCountBySKUCode(bomItem.getBomItem());
 
-                    Double c = Double.parseDouble(String.valueOf(order.getQty())) * bom.getQty();
+                    Double c = Double.parseDouble(String.valueOf(order.getQty())) * Double.parseDouble(bomItem.getQty());
                     double currentCount = scBom.getCount();
                     scBom.setCount(currentCount - c);
 
                     stockCountService.updateStockCount(scBom);
                 }
             }
+        }
         }
         else {
             skuCode += order.getItems().get(0).getSKUCode();
@@ -159,17 +180,8 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
         stockCountService.updateStockCount(stockCount);
      }
 
-    // // Return a ResponseEntity with the original pickList
      return ResponseEntity.status(HttpStatus.CREATED).body(createdPickList);
 }
-
-
-
-    @PutMapping("/{id}")
-    public ResponseEntity<PickList> updatePickList(@PathVariable Long id, @RequestBody PickList pickList) {
-        PickList updatedPickList = pickListService.updatePickList(id, pickList);
-        return ResponseEntity.ok(updatedPickList);
-    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePickList(@PathVariable Long id) {
@@ -186,16 +198,17 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
                 stock.setSkucode(item.getParentSKU());
                 stock.setSubQty("0");
                 for (Bom bom : item.getBoms()){
-                    if (bom.getBomItem().equals(item.getParentSKU())){
-                        stock.setAddQty(String.valueOf(order.getQty() * bom.getQty()));
+                    for (BomItem bomItem : bom.getItemsInBom()){
+                    if (bomItem.getBomItem().equals(item.getParentSKU())){
+                        stock.setAddQty(String.valueOf(order.getQty() * Double.parseDouble(bomItem.getQty())));
                     }
-                    if (!bom.getBomItem().equals(item.getParentSKU())){
+                    if (!bomItem.getBomItem().equals(item.getParentSKU())){
                         Stock s = new Stock();
                         s.setDate(new Date());
                         s.setSubQty("0");
                         s.setItem(item);
-                        s.setAddQty(String.valueOf(order.getQty() * bom.getQty()));
-                        s.setSkucode(bom.getBomItem());
+                        s.setAddQty(String.valueOf(order.getQty() * Double.parseDouble(bomItem.getQty())));
+                        s.setSkucode(bomItem.getBomItem());
                         s.setSource("picklist/order");
                         s.setMessage("pickList deleted for order");
                         s.setNumber("pickList Number = " + pickList.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
@@ -208,6 +221,7 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
                 stock.setSource("picklist/order");
                 stock.setMessage("pickList deleted for order");
                 stock.setNumber("pickList Number = " + pickList.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
+                }
             }
             else {
                 stock.setDate(new Date());
@@ -229,10 +243,12 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
             if (order.getItems().get(0).getBoms().size() > 0){
                 skuCode += order.getItems().get(0).getParentSKU();
                 for (Bom bom : order.getItems().get(0).getBoms()){
-                    if (bom.getBomItem().equals(order.getItems().get(0).getParentSKU())){
-                        additionalCount = Double.parseDouble(String.valueOf(order.getQty())) * bom.getQty();
+                    for(BomItem bomItem : bom.getItemsInBom()){
+                    if (bomItem.getBomItem().equals(order.getItems().get(0).getParentSKU())){
+                        additionalCount = Double.parseDouble(String.valueOf(order.getQty())) * Double.parseDouble(bomItem.getQty());
                     }
                 }
+            }
             }
             else {
                 skuCode += order.getItems().get(0).getSKUCode();
@@ -253,238 +269,76 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
 
     @GetMapping("/orderData")
     public List<OrderData> getOrdersData() {
-        List<Order> orders = orderService.getAllOrders(); // Get orders from service/repository
-        List<OrderData> orderDataList = new ArrayList<>(); // List to hold order data
-        int totalQty = 0;
-
-        for (Order order : orders) {
-            Boolean generatedOrder = generated(order);
-            if (!generatedOrder){
-                if (order.getItems() != null) {
-                    for (Item item : order.getItems()) {
-                        OrderData orderData = new OrderData();
-                        orderData.setDate(order.getDate());
-                        orderData.setOrderNo(order.getOrderNo());
-                        orderData.setPortal(order.getPortal());
-                        orderData.setSellerSKU(item.getSellerSKUCode());
-                        orderData.setDescription(order.getProductDescription());
-                        orderData.setImg(item.getImg());
-                        if (item.getBoms().size() > 0){
-                            System.out.println("size = " + item.getBoms().size());
-                        for (Bom bom : item.getBoms()){
-                            if (bom.getSKUCode().equals(item.getSKUCode()) && bom.getBomItem().equals(item.getParentSKU())) {
-                                orderData.setPickQty(order.getQty() * bom.getQty());
-                                System.out.println("inside if");
-                                totalQty += order.getQty() * bom.getQty();
-                                System.out.println(itemSupplierService.getItemBySKUCode(item.getParentSKU()).getSellerSKUCode());
-
-                                orderData.setSellerSKU(itemSupplierService.getItemBySKUCode(item.getParentSKU()).getSellerSKUCode());
-                                orderData.setDescription(itemSupplierService.getItemBySKUCode(item.getParentSKU()).getDescription());
-                                
-                            }
-                            
-                            else if (bom.getSKUCode().equals(item.getSKUCode()) && !bom.getBomItem().equals(item.getParentSKU())){
-                                OrderData o = new OrderData();
-                                Item i = itemSupplierService.getItemBySKUCode(bom.getBomItem());
-                                o.setDate(order.getDate());
-                                o.setOrderNo(order.getOrderNo());
-                                o.setPortal(order.getPortal());
-                                o.setSellerSKU(i.getSellerSKUCode());
-                                o.setImg(i.getImg());
-                                totalQty += order.getQty() * bom.getQty();
-                                o.setPickQty(order.getQty() * bom.getQty());
-                                if (getBestStorage(i, totalQty).size() > 0){
-                                    String bin = "";
-                                    String rack = "";
-                                    for (Storage s : getBestStorage(i, totalQty)){
-                                        bin += s.getBinNumber();
-                                        rack += s.getRackNumber();
-                                    }
-                                    o.setBinNumber(bin);
-                                    o.setRackNumber(rack);
-                                }
-                                else {
-                                    o.setBinNumber("NA");
-                                    o.setRackNumber("NA");
-                                }
-                            
-                                o.setQty(order.getQty());
-                                o.setDescription(i.getDescription());
-                                orderDataList.add(o);
-                                //totalQty = 0;
-                            }
-                            
-                        }
-                    }
-                    else {
-                        orderData.setPickQty(order.getQty());
-                        totalQty += order.getQty();
-                        
-                    }
-                    if (getBestStorage(item, totalQty).size() > 0){
-                        String bin = "";
-                        String rack = "";
-                        for (Storage s : getBestStorage(item, totalQty)){
-                            bin += s.getBinNumber();
-                            rack += s.getRackNumber();
-                        }
-                        orderData.setBinNumber(bin);
-                        orderData.setRackNumber(rack);
-                    }
-                    else {
-                        orderData.setBinNumber("NA");
-                        orderData.setRackNumber("NA");
-                    }
-                    
-                    orderData.setQty(order.getQty());
-                    orderDataList.add(orderData);
-                        totalQty = 0;
-                }
-
-                }
-            }
-        }
-
-        return orderDataList;
+        return pickListService.getOrderDatas();
     }
 
-    public List<Storage> getBestStorage (Item item, int totalQty){
-        List<Storage> storages = new ArrayList<>();
-        int sum = 0;
-        if(item.getBoms().size() > 0){
-            item = itemSupplierService.getItemBySKUCode(item.getParentSKU());
-        }
-        for (Storage storage : item.getStorages()){
-            if (Integer.parseInt(storage.getQty()) >= totalQty){
-                storages.clear();
-                storages.add(storage);
-                return storages;
-            }
-            else {
-                storages.add(storage);
-                sum += Integer.parseInt(storage.getQty());
-                if (sum >= totalQty){
-                    return storages;
-                }
-            }
-        }
-        return storages;
-    }
-
-    public boolean generated(Order order){
-        for (PickList pickList : pickListService.getAllPickLists()){
-            for (Order o : pickList.getOrders()){
-                if (o.getOrderNo().equals(order.getOrderNo())){
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     @GetMapping("/getData")
     public List<PickListData> getData() {
-        List<PickList> pickLists = pickListService.getAllPickLists();
-        List<PickListData> pickListDataList = new ArrayList<>();
-        int totalQty = 0;
-        for (PickList p : pickLists){
-            for (Order order : p.getOrders()){
-                PickListData pickListData = new PickListData();
-                pickListData.setPickListNumber(p.getPickListNumber());
-                System.out.println("portal order number = " + order.getPortalOrderNo());
-                    if (order.getItems() != null) {
-                        for (Item item : order.getItems()) {
-                            pickListData.setDate(order.getDate());
-                            pickListData.setOrderNo(order.getOrderNo());
-                            pickListData.setPortal(order.getPortal());
-                            pickListData.setSellerSKU(item.getSellerSKUCode());
-                            pickListData.setPortalOrderNo(order.getPortalOrderNo());
-                            pickListData.setPickListId(p.getPicklistId());
-
-                            if (item.getBoms().size() > 0){
-                            for (Bom bom : item.getBoms()){
-                                if (bom.getSKUCode().equals(item.getSKUCode()) && bom.getBomItem().equals(item.getParentSKU())) {
-                                    pickListData.setPickQty(order.getQty() * bom.getQty());
-                                    totalQty += order.getQty() * bom.getQty();
-                                    pickListData.setDate(order.getDate());
-                                    pickListData.setOrderNo(order.getOrderNo());
-                                    pickListData.setPortal(order.getPortal());
-                                    Item it = itemSupplierService.getItemBySKUCode(item.getParentSKU());
-                                    pickListData.setSellerSKU(it.getSellerSKUCode());
-                                    pickListData.setPortalOrderNo(order.getPortalOrderNo());
-                                    pickListData.setPickListId(p.getPicklistId());
-                                }
-                                else if (bom.getSKUCode().equals(item.getSKUCode()) && !bom.getBomItem().equals(item.getParentSKU())){
-                                    PickListData o = new PickListData();
-                                    Item i = itemSupplierService.getItemBySKUCode(bom.getBomItem());
-                                    o.setPickListNumber(p.getPickListNumber());
-                                    o.setDate(order.getDate());
-                                    o.setOrderNo(order.getOrderNo());
-                                    o.setPortal(order.getPortal());
-                                    o.setSellerSKU(i.getSellerSKUCode());
-                                    o.setPortalOrderNo(order.getPortalOrderNo());
-                                    o.setPickListId(p.getPicklistId());
-                                    totalQty += order.getQty() * bom.getQty();
-                                    o.setPickQty(order.getQty() * bom.getQty());
-                                    if (getBestStorage(i, totalQty).size() > 0){
-                                        String bin = "";
-                                        String rack = "";
-                                        for (Storage s : getBestStorage(i, totalQty)){
-                                            bin += s.getBinNumber();
-                                            rack += s.getRackNumber();
-                                        }
-                                        o.setBinNumber(bin);
-                                        o.setRackNumber(rack);
-                                    }
-                                    else {
-                                        o.setBinNumber("NA");
-                                        o.setRackNumber("NA");
-                                    }
-                                
-                                    o.setQty(order.getQty());
-                                    o.setDescription(i.getDescription());
-                                    pickListDataList.add(o);
-                                    //totalQty = 0;
-                                }
-                                
-                            }
-                        }
-                        else {
-                            pickListData.setPickQty(order.getQty());
-                            totalQty += order.getQty();
-                        }
-    
-                            if (getBestStorage(item, totalQty).size() > 0){
-                                String bin = "";
-                                String rack = "";
-                                for (Storage s : getBestStorage(item, totalQty)){
-                                    bin += s.getBinNumber();
-                                    rack += s.getRackNumber();
-                                }
-                                pickListData.setBinNumber(bin);
-                                pickListData.setRackNumber(rack);
-                            }
-                            else {
-                                pickListData.setBinNumber("NA");
-                                pickListData.setRackNumber("NA");
-                            }
-                            
-                            pickListData.setQty(order.getQty());
-                            pickListData.setDescription(order.getProductDescription());
-                            pickListDataList.add(pickListData);
-    
-                            totalQty = 0;
-                        }  
-                }
-            }
-        }
-        return pickListDataList;
+        return pickListService.getData();
     }
-
+    
+    public boolean isCurrentDateBetween(Bom bom) {
+        LocalDate currentDate = LocalDate.now();
+    
+        Date startDate = bom.getDefaultStartDate();
+        Date endDate = bom.getDefaultEndDate();
+    
+        LocalDate localStartDate = startDate != null ? convertToLocalDate(startDate) : null;
+        LocalDate localEndDate = endDate != null ? convertToLocalDate(endDate) : null;
+    
+        if (localStartDate != null && localEndDate != null) {
+            return (currentDate.isEqual(localStartDate) || currentDate.isAfter(localStartDate)) &&
+                   (currentDate.isEqual(localEndDate) || currentDate.isBefore(localEndDate));
+        } else if (localStartDate != null) {
+            return currentDate.isEqual(localStartDate) || currentDate.isAfter(localStartDate);
+        } else if (localEndDate != null) {
+            return currentDate.isEqual(localEndDate) || currentDate.isBefore(localEndDate);
+        } else {
+            return false; // Or handle the case where both dates are null if necessary
+        }
+    }
+    
+    private LocalDate convertToLocalDate(Date dateToConvert) {
+        return dateToConvert.toInstant()
+          .atZone(ZoneId.systemDefault())
+          .toLocalDate();
+    }
+    
 
     @GetMapping("/getSelectedOrderData")
-    public List<OrderData> getMethodName(@RequestParam String orderNo) {
-        List<OrderData> oo = getOrdersData();
+    public List<OrderData> getMethodName(@RequestParam String orderNo, @RequestParam String bomCode) {
+       String bomC = "";
+        List<Order> orders = orderService.findByOrderNo(orderNo);
+       for(Order order : orders){
+            for(Item item : order.getItems()){
+                for (Bom bom : item.getBoms()){
+                    if (item.getBoms().size() > 0 && bomCode.equals("")){
+                        throw new IllegalArgumentException("Select a bomCode");
+                    }
+                    if(item.getBoms().size() > 0){
+                        if (isCurrentDateBetween(bom)){
+                            bomC = bom.getBomCode();
+                        }
+                        else if (!isCurrentDateBetween(bom)){
+                            bomC = bomCode;
+                        }
+                    }
+                    if (item.getBoms().size() == 0) {
+                        bomC = "";
+                    }
+                    
+                }
+            }
+       }
+       List<OrderData> oo = new ArrayList<>();
+       if(bomC.length() > 0){
+        Bom bom = bomService.getBomByBomCode(bomC);
+        oo = pickListService.getOrderData(bom);
+       }
+       else {
+        oo = pickListService.getOrderDatas();
+       }
         List<OrderData> orderDataList = new ArrayList<>();
         for (OrderData o : oo){
             if (o.getOrderNo().equals(orderNo)){
@@ -551,7 +405,17 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
         }
     
         return mergedPickListData;
-    }    
+    }   
+    
+    @GetMapping("/boms/{orderNo}")
+    public List<Bom> getBomWithOrderNo(@PathVariable String orderNo){
+        return pickListService.getOrdersWithBom(orderNo);
+    }
 
+    @GetMapping("/bom/default/bomCode")
+    public String getMethodName(@RequestParam String orderNo) {
+        return pickListService.getDefaultBomCode(orderNo);
+    }
+    
 }
 

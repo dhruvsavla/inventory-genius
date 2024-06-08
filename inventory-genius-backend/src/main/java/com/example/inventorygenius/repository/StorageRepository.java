@@ -10,4 +10,6 @@ import com.example.inventorygenius.entity.Storage;
 public interface StorageRepository extends JpaRepository<Storage, Long> {
     Storage findBySkucode(String skucode);
     Storage findByBinNumberAndRackNumberAndSkucode(String binNumber, String rackNumber, String skucode);
+    boolean existsByItems_SKUCode(String skucode);
+
 }

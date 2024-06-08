@@ -38,7 +38,7 @@ public class StockInward {
     @JoinColumn(name = "item_id")
     private Item item;
 
-     @OneToOne
+    @OneToOne
     @JoinColumn(name = "stock_id")
     private Stock stock;
 

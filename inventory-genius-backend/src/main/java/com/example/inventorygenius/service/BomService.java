@@ -49,9 +49,11 @@ public class BomService {
                 .orElseThrow(() -> new NoSuchElementException("BOM not found with id: " + id));
 
         bom.setSKUCode(bomDetails.getSKUCode());
-        bom.setBomItem(bomDetails.getBomItem());
-        bom.setQty(bomDetails.getQty());
         bom.setBomItems(bomDetails.getBomItems());
+        bom.setItemsInBom(bomDetails.getItemsInBom());
+        bom.setDefaultStartDate(bomDetails.getDefaultStartDate());
+        bom.setDefaultEndDate(bomDetails.getDefaultEndDate());
+        bom.setBomCode(bomDetails.getBomCode());
 
         return bomRepository.save(bom);
     }
@@ -59,5 +61,11 @@ public class BomService {
     public void deleteBomById(Long id) {
         bomRepository.deleteById(id);
     }
+
+    public Bom getBomByBomCode(String bomCode) {
+        return bomRepository.findByBomCode(bomCode)
+                .orElseThrow(() -> new RuntimeException("Bom not found with bomCode " + bomCode));
+    }
+
 
 }

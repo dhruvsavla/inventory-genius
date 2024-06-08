@@ -10,16 +10,16 @@ import jakarta.persistence.Table;
 import java.util.Date;
 
 @Entity
-@Table(name = "picklist_data")
-public class PickListData {
+@Table(name = "packinglist_data")
+public class PackingListData {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "pick_list_id")
-    private Long pickListId;
+    @Column(name = "pack_list_id")
+    private Long packListId;
 
-    @Column(name = "pick_list_number")
-    private Long pickListNumber;
+    @Column(name = "pack_list_number")
+    private Long packListNumber;
 
     @Column(name = "date")
     private Date date;
@@ -45,24 +45,17 @@ public class PickListData {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "bin_number")
-    private String binNumber;
+    @Column(name = "pack_qty")
+    private Double packQty;
 
-    @Column(name = "rack_number")
-    private String rackNumber;
-
-    @Column(name = "pick_qty")
-    private Double pickQty;
-
-    public PickListData() {
+    public PackingListData() {
         
     }
-    
-    public PickListData(Long pickListId, Long pickListNumber, Date date, String portalOrderNo, String orderNo,
-            String bomCode, String portal, String sellerSKU, Double qty, String description, String binNumber,
-            String rackNumber, Double pickQty) {
-        this.pickListId = pickListId;
-        this.pickListNumber = pickListNumber;
+
+    public PackingListData(Long packListId, Long packListNumber, Date date, String portalOrderNo, String orderNo,
+            String bomCode, String portal, String sellerSKU, Double qty, String description, Double packQty) {
+        this.packListId = packListId;
+        this.packListNumber = packListNumber;
         this.date = date;
         this.portalOrderNo = portalOrderNo;
         this.orderNo = orderNo;
@@ -71,25 +64,23 @@ public class PickListData {
         this.sellerSKU = sellerSKU;
         this.qty = qty;
         this.description = description;
-        this.binNumber = binNumber;
-        this.rackNumber = rackNumber;
-        this.pickQty = pickQty;
+        this.packQty = packQty;
     }
 
-    public Long getPickListId() {
-        return pickListId;
+    public Long getPackListId() {
+        return packListId;
     }
 
-    public void setPickListId(Long pickListId) {
-        this.pickListId = pickListId;
+    public void setPackListId(Long packListId) {
+        this.packListId = packListId;
     }
 
-    public Long getPickListNumber() {
-        return pickListNumber;
+    public Long getPackListNumber() {
+        return packListNumber;
     }
 
-    public void setPickListNumber(Long pickListNumber) {
-        this.pickListNumber = pickListNumber;
+    public void setPackListNumber(Long packListNumber) {
+        this.packListNumber = packListNumber;
     }
 
     public Date getDate() {
@@ -156,27 +147,12 @@ public class PickListData {
         this.description = description;
     }
 
-    public String getBinNumber() {
-        return binNumber;
+    public Double getPackQty() {
+        return packQty;
     }
 
-    public void setBinNumber(String binNumber) {
-        this.binNumber = binNumber;
+    public void setPackQty(Double packQty) {
+        this.packQty = packQty;
     }
-
-    public String getRackNumber() {
-        return rackNumber;
-    }
-
-    public void setRackNumber(String rackNumber) {
-        this.rackNumber = rackNumber;
-    }
-
-    public Double getPickQty() {
-        return pickQty;
-    }
-
-    public void setPickQty(Double pickQty) {
-        this.pickQty = pickQty;
-    }
+    
 }

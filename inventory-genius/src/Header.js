@@ -27,16 +27,30 @@ function Header() {
             
                 <Nav.Link href="/supplier">Supplier</Nav.Link>
                 <Nav.Link href="/item">Item</Nav.Link>
-                <Nav.Link href="/itemportalmapping">Item Portal Mapping</Nav.Link>
                 <Nav.Link href="/bom">BOM</Nav.Link>
-                <Nav.Link href="/importorderform">Import Order Form</Nav.Link>
-                <Nav.Link href="/picklist">PickList</Nav.Link>
-                <Nav.Link href="/packinglist">PackingList</Nav.Link>
-                <Nav.Link href="/stock">Stock</Nav.Link>
+                <Nav.Link href="/bomItem">Bom Item</Nav.Link>
+                <Nav.Link href="/itemportalmapping">Item Portal Mapping</Nav.Link>
+                <Nav.Link href="/importorderform">Order Form</Nav.Link>
                 <Nav.Link href="/stockinward">Stock Inward</Nav.Link>
                 <Nav.Link href="/storage">Storage</Nav.Link>
+                <Nav.Link href="/picklist">PickList</Nav.Link>
+                <Nav.Link href="/packinglist">PackingList</Nav.Link>
+                
+
+                {/* <Nav.Link href="/packScan">Scan Packed Orders</Nav.Link>
+                <Nav.Link href="/dispatchScan">Scan Dispatched Orders</Nav.Link> */}
+                <Nav.Link href="/stock">Stock</Nav.Link>
+                
                 {/* <Nav.Link href="/dispatch">Dispatch</Nav.Link> */}
                 <Nav.Link href="/returns">Returns</Nav.Link>
+
+                <NavDropdown title="Scans" id="basic-nav-dropdown">
+                    <NavDropdown.Item href="/packScan">Scan Packed Orders</NavDropdown.Item>
+                    <NavDropdown.Item href="/dispatchScan">
+                    Scan Dispatched Orders
+                    </NavDropdown.Item>
+                </NavDropdown>
+
             </Nav>
             {/* <Form className="d-flex">
                 <Form.Control

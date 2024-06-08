@@ -7,6 +7,9 @@ import com.example.inventorygenius.entity.Storage;
 import com.example.inventorygenius.entity.Bom;
 import com.example.inventorygenius.entity.Item;
 import com.example.inventorygenius.repository.StorageRepository;
+import com.example.inventorygenius.service.ItemService;
+
+import com.example.inventorygenius.controller.ItemSupplierController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +25,7 @@ public class StorageService {
 
     public Storage addStorage(Storage storage) {
         List<Item> newItems = new ArrayList<>();
-        for (Item item : storage.getItemsInStorage()) {
+        for (Item item : storage.getItems()) {
             if (item.getItemId() == null) { // Check if item is new
                 newItems.add(item);
             }
@@ -40,27 +43,31 @@ public class StorageService {
     }
 
     @Autowired
-    private ItemService itemService; // Assuming you have an ItemService
+    private ItemSupplierController itemService;
+    
+    @Autowired
+    private ItemSupplierService itemService1;// Assuming you have an ItemService
 
     
 
     public Storage addStorageWithItem(Storage storage, Long itemId) {
-        Optional<Item> optionalItem = itemService.getItemById(itemId);
-        if (optionalItem.isPresent()) {
-            Item item = optionalItem.get();
-            
+        Item item = itemService.findItem(itemId);
+    
+            // Add the item to the storage's list of items
+            storage.getItems().add(item);
+    
             // Add the storage to the item's list of storages
             item.getStorages().add(storage);
     
-            // Save the changes
+            // Save the storage first
             storageRepository.save(storage);
-            
-            // Return the updated Storage entity
+    
+            // Update the item
+            itemService.updateItem(item.getItemId(), item);
+    
             return storage;
-        } else {
-            throw new RuntimeException("Item not found with ID: " + itemId);
-        }
     }
+    
 
 
     public Storage updateStorage(Long id, Storage storageDetails) {

@@ -21,6 +21,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { saveAs } from 'file-saver';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import Pagination from 'react-bootstrap/Pagination';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 function StockInward() {
   const [validated, setValidated] = useState(false);
@@ -36,7 +40,28 @@ function StockInward() {
   const [searchTermDate, setSearchTermDate] = useState("");
   const [searchTermQty, setSearchTermQty] = useState("");
   const [itemImg, setItemImg] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const rowsPerPageOptions = [5, 10, 20];
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+  
+  // JSX for the dropdown menu to select rows per page
+  const rowsPerPageDropdown = (
+    <Form.Group controlId="itemsPerPageSelect">
+      <Form.Select style={{marginLeft: "5px", width : "70px"}} value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        {rowsPerPageOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Select>
+    </Form.Group>
+  );
   useEffect(() => {
     const currentDate = new Date(); // Get current date
     const year = currentDate.getFullYear(); // Get current year
@@ -54,7 +79,31 @@ function StockInward() {
       (supplier.qty && supplier.qty.toLowerCase().includes(searchTermQty.toLowerCase()))
     );
   }) : [];
+
+  const sortedData = filteredData.sort((a, b) => {
+    if (sortConfig.key) {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+      if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+      return 0;
+    }
+    return filteredData;
+  });
+
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
   
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -161,7 +210,8 @@ const handleRowSubmit = () => {
     const formData = {
       date, 
       skucode,
-      qty
+      qty,
+      stock : selectedItem.stock
     };
     console.log('form data: ', formData)
     console.log("id: ", selectedItem.stockInwardId)
@@ -279,7 +329,25 @@ const getImg = (skucode) => {
       // Handle error
       console.error('Error getting img:', error);
     });
+
+    
 }
+
+const exportToExcel = () => {
+  const ws = XLSX.utils.json_to_sheet(filteredData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+  function s2ab(s) {
+    const buf = new ArrayBuffer(s.length);
+    const view = new Uint8Array(buf);
+    for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+    return buf;
+  }
+
+  saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'StockInwardData.xlsx');
+};
 
     return (
         <div>
@@ -362,7 +430,15 @@ const getImg = (skucode) => {
       )}
       <span style={{ margin: '0 10px' }}>or</span>
             <input type="file" onChange={handleFileUpload} />
-            <button onClick={downloadTemplate}>Download Template</button>
+            <span style={{margin: "auto"}}></span>
+            <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: 'orange', color: 'white', fontWeight: 'bolder' }}
+              onClick={downloadTemplate}
+            >
+              {<CloudUploadIcon style={{marginBottom: "5px"}}/>} Download Template
+            </Button>
             </div>
             </Form>
       </AccordionDetails>
@@ -374,14 +450,17 @@ const getImg = (skucode) => {
           id="panel3-header"
           sx={{ backgroundColor: '#E5E7E9' }} 
         >
-          <h4>List View of Stock</h4>
+          <h4>List View of Stock Inward</h4>
         </AccordionSummary>
         <AccordionDetails>
         <Table striped bordered hover>
             <thead>
               <tr>
                 <th></th>
-                <th>Date
+                <th>
+                <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('date')}>
+                  </SwapVertIcon>
+                  Date
                 <span style={{ margin: '0 10px' }}><input
                   type="text"
                   placeholder="Search by Date"
@@ -389,7 +468,10 @@ const getImg = (skucode) => {
                   onChange={(e) => setSearchTermDate(e.target.value)}
                 /></span>
                 </th>
-                  <th>SKUCode
+                  <th>
+                  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('skucode')}>
+                  </SwapVertIcon>
+                    SKUCode
                   <span style={{ margin: '0 10px' }}><input
                   type="text"
                   placeholder="Search by sku"
@@ -398,7 +480,10 @@ const getImg = (skucode) => {
                 /></span>
                   </th>
                   
-                  <th>Quantity
+                  <th>
+                  <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('qty')}>
+                  </SwapVertIcon>
+                    Quantity
                   <span style={{ margin: '0 10px' }}><input
                   type="text"
                   placeholder="Search by qty"
@@ -439,6 +524,29 @@ const getImg = (skucode) => {
               ))}
             </tbody>
           </Table>
+          <div style={{display: 'flex', justifyContent: 'space-between'}}>
+          <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: '#5463FF', color: 'white', fontWeight: 'bolder' }}
+              onClick={exportToExcel}
+            >
+              {<FileDownloadIcon style={{marginBottom: "5px"}}/>} Export to Excel
+            </Button>
+
+            
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {rowsPerPageDropdown}
+            
+            <Pagination>
+              {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+                <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+            </Pagination>
+          </div>
+          </div>
         </AccordionDetails>
       </Accordion>
                 

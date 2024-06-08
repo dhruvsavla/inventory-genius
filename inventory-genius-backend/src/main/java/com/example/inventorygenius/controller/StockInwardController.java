@@ -36,9 +36,14 @@ public class StockInwardController {
     @PostMapping
     public ResponseEntity<StockInward> addStockInward(@RequestBody StockInward stockInward) {
 
-        StockInward savedStockInward = stockInwardService.addStockInward(stockInward);
+        StockInward savedStockInward = new StockInward();
 
-        Long stockInwardId = savedStockInward.getStockInwardId();
+        savedStockInward.setDate(stockInward.getDate());
+        savedStockInward.setItem(stockInward.getItem());
+        savedStockInward.setQty(stockInward.getQty());
+        savedStockInward.setSkucode(stockInward.getSkucode());
+
+        Long stockInwardId = stockInward.getStockInwardId();
         String number = String.valueOf(stockInwardId);
 
         Stock stock = new Stock();
@@ -52,6 +57,7 @@ public class StockInwardController {
         stock.setNumber("id = " + number);
 
         Stock savedStock = stockService.addStock(stock);
+        System.out.println(savedStock.getMessage());
         savedStockInward.setStock(savedStock);
 
         String skuCode = stockInward.getSkucode();
@@ -71,6 +77,11 @@ public class StockInwardController {
 
         stockCountService.saveStockCount(stockCount);
 
+        StockInward si = stockInwardService.addStockInward(savedStockInward);
+
+        Stock stock2 = si.getStock();
+        stock2.setNumber("id = " + String.valueOf(si.getStockInwardId()));
+        stockService.updateStock(stock2.getStockId(), stock2);
         return new ResponseEntity<>(savedStockInward, HttpStatus.CREATED);
     }
 
@@ -84,25 +95,38 @@ public class StockInwardController {
 
     @DeleteMapping("/{id}")
     public void deleteStockInward(@PathVariable("id") Long id) {
-        System.out.println("deleted");
-        
+        System.out.println("deleted"); 
         stockInwardService.deleteStockInwardById(id);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<StockInward> updateStockInward(@PathVariable Long id, @RequestBody StockInward stockInwardDetails) {
         StockInward updatedStockInward = stockInwardService.updateStockInward(id, stockInwardDetails);
-        
-        // Update the corresponding Stock entity
+
         Stock stock = updatedStockInward.getStock();
-        stock.setDate(stockInwardDetails.getDate());
-        stock.setSkucode(stockInwardDetails.getSkucode());
-        stock.setAddQty(stockInwardDetails.getQty());
-        
+
+        StockCount stockCount = stockCountService.getStockCountBySKUCode(stockInwardDetails.getSkucode());
+        stockCount.setCount(Double.parseDouble(updatedStockInward.getQty()));
+
+
+        if (stock == null) {
+            // Handle the case where stock is null, e.g., by creating a new Stock or returning an error
+            // For example, you could throw an exception or log an error
+            // throw new RuntimeException("Stock entity is null for StockInward with id " + id);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        System.out.println(stock.getMessage());
+
+        stock.setDate(updatedStockInward.getDate());
+        stock.setSkucode(updatedStockInward.getSkucode());
+        stock.setAddQty(updatedStockInward.getQty());
+
         // Save the updated Stock entity
         stockService.updateStock(stock.getStockId(), stock);
 
         return new ResponseEntity<>(updatedStockInward, HttpStatus.OK);
     }
+
 
 }

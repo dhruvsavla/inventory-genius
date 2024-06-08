@@ -94,11 +94,8 @@ public class Item {
     // @JoinColumn(name = "supplier_id")
     // private Supplier supplier;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-@JoinTable(name = "storage_item",
-           joinColumns = @JoinColumn(name = "item_id"),
-           inverseJoinColumns = @JoinColumn(name = "storage_id"))
-private List<Storage> storages = new ArrayList<>();
+    @ManyToMany(mappedBy = "items", fetch = FetchType.EAGER)
+    private List<Storage> storages = new ArrayList<>();
 
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL)

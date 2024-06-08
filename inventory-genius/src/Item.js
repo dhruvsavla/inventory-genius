@@ -22,6 +22,8 @@ import { saveAs } from 'file-saver';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Pagination from 'react-bootstrap/Pagination';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 function Item() {
   const [validated, setValidated] = useState(false);
@@ -69,7 +71,26 @@ function Item() {
   const [isRotating, setIsRotating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const rowsPerPageOptions = [5, 10, 20];
 
+  // Function to handle change in items per page
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+  
+  // JSX for the dropdown menu to select rows per page
+  const rowsPerPageDropdown = (
+    <Form.Group controlId="itemsPerPageSelect">
+      <Form.Select style={{marginLeft: "5px", width : "70px"}} value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        {rowsPerPageOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Form.Select>
+    </Form.Group>
+  );
   const filteredData = apiData.filter(item => {
     return (
       (!searchTermSupplier || (item.suppliers && item.suppliers.length > 0 && item.suppliers[0].supplierName && item.suppliers[0].supplierName.toLowerCase().includes(searchTermSupplier.toLowerCase()))) &&
@@ -513,6 +534,22 @@ const postData = (data) => {
     console.log("After deletion, apiData:", apiData);
   };
 
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(filteredData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+  
+    function s2ab(s) {
+      const buf = new ArrayBuffer(s.length);
+      const view = new Uint8Array(buf);
+      for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+      return buf;
+    }
+  
+    saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'ItemData.xlsx');
+  };
+
     return (
       <div>
         <ToastContainer position="top-right" />
@@ -794,7 +831,15 @@ const postData = (data) => {
       )}
       <span style={{ margin: '0 10px' }}>or</span>
             <input type="file" onChange={handleFileUpload} />
-            <button onClick={downloadTemplate}>Download Template</button>
+            <span style={{margin: "auto"}}></span>
+            <Button
+              variant="contained"
+              tabIndex={-1}
+              style={{ height: '33px', backgroundColor: 'orange', color: 'white', fontWeight: 'bolder' }}
+              onClick={downloadTemplate}
+            >
+              {<CloudUploadIcon style={{marginBottom: "5px"}}/>} Download Template
+            </Button> 
             </div>          
     </Form>
     </AccordionDetails>
@@ -812,7 +857,7 @@ const postData = (data) => {
           <AccordionDetails>
         {apiData && (
   <div style={{ overflowX: 'auto' }}> 
-      <Table className='custom-table'>
+      <Table striped bordered hover className='custom-table'>
         <thead>
           <tr>
             <th></th>
@@ -997,15 +1042,19 @@ const postData = (data) => {
           ))}
         </tbody>
       </Table>
-      <Pagination>
-            {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
-              <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
-                {index + 1}
-              </Pagination.Item>
-            ))}
-          </Pagination>
+      
 </div>
       )}
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {rowsPerPageDropdown}
+            <Pagination>
+              {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, index) => (
+                <Pagination.Item key={index} active={index + 1 === currentPage} onClick={() => paginate(index + 1)}>
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+            </Pagination>
+          </div>
           </AccordionDetails>
           </Accordion>
 

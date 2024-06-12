@@ -605,7 +605,9 @@ const exportToExcel = () => {
 
       </td>
       <td>{bom.bomCode ? bom.bomCode : ''}</td>
-      <td>{bom.skucode ? bom.skucode : ''}</td>
+      <td>
+  {bom.bomItems && bom.bomItems.length > 0 && bom.bomItems[0].skucode ? bom.bomItems[0].skucode : ''}
+</td>
       <td>
   {(() => {
     if (!bom.defaultStartDate) return '';

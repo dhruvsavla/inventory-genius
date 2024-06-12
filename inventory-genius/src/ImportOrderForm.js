@@ -172,14 +172,13 @@ function ImportOrderForm() {
     (item.qty && item.qty.toString().toLowerCase().includes(searchTermQuantity.toLowerCase())) ||
     (item.courier && item.courier.toString().toLowerCase().includes(searchTermCourier.toLowerCase())) ||
     (item.dispatched && item.dispatched.toString().toLowerCase().includes(searchTermDispatched.toLowerCase())) ||
-    (item.sellerSKU && item.sellerSKU.toString().toLowerCase().includes(searchTermSellerSKU.toLowerCase())) ||
-    (item.portalSKU && item.portalSKU.toString().toLowerCase().includes(searchTermPortalSKU.toLowerCase())) ||
-    (item.productDescription && item.productDescription.toString().toLowerCase().includes(searchTermProductDescription.toLowerCase())) ||
-    (item.portal && item.portal.toString().toLowerCase().includes(searchTermPortal.toLowerCase())) &&
+    (item.itemPortalMapping.sellerSkuCode && item.itemPortalMapping.sellerSkuCode.toString().toLowerCase().includes(searchTermSellerSKU.toLowerCase())) ||
+    (item.itemPortalMapping.portalSkuCode && item.itemPortalMapping.portalSkuCode.toString().toLowerCase().includes(searchTermPortalSKU.toLowerCase())) ||
+    (item.itemPortalMapping.item.description && item.itemPortalMapping.item.description.toString().toLowerCase().includes(searchTermProductDescription.toLowerCase())) ||
+    (item.itemPortalMapping.portal && item.itemPortalMapping.portal.toString().toLowerCase().includes(searchTermPortal.toLowerCase())) &&
     (searchTermCancel === null || searchTermCancel === '' || (item.cancel && item.cancel.toString().toLowerCase().includes(searchTermCancel.toLowerCase()))) &&
     (searchTermOrderStatus === null || searchTermOrderStatus === '' || (item.orderStatus && item.orderStatus.toString().toLowerCase().includes(searchTermOrderStatus.toLowerCase()))) &&
     (searchTermAwbNo === null || searchTermAwbNo === '' || (item.awbNo && item.awbNo.toString().toLowerCase().includes(searchTermAwbNo.toLowerCase())))
-
   );
 
   const sortedData = filteredData.sort((a, b) => {
@@ -240,72 +239,100 @@ const handleSubmit = (event) => {
   console.log("in handle submit");
   event.preventDefault();
   const form = event.currentTarget;
+
   if (form.checkValidity() === false) {
     event.stopPropagation();
-    console.log("true");
+    console.log("Form validation failed");
     setValidated(true);
     return;
-  }
-
-  else {
+  } else {
     // Fetch item based on supplier and supplier SKU code
     axios.get(`http://localhost:8080/item/supplier/order/search/${sellerSKU}/${productDescription}`)
       .then(response => {
         if (response.data) {
-          const itemsArray = []; // Initialize an array to store items
-          itemsArray.push(response.data);
-          console.log("in item get");
-          const formData = {
-            date,
-            orderNo,
-            portalOrderNo,
-            portalOrderLineId,
-            portalSKU,
-            productDescription,
-            shipByDate,
-            dispatched,
-            courier,
-            portal,
-            sellerSKU,
-            qty,
-            cancel,
-            awbNo,
-            orderStatus: "Order Recieved",
-            items: itemsArray
-          };
-          console.log("out item get");
-          console.log('form data: ', formData);
-          axios.post('http://localhost:8080/orders', formData)
-            .then(response => {
-              console.log('POST request successful:', response);
-              toast.success('Order added successfully', {
-                autoClose: 2000 // Close after 2 seconds
-              });
-              const lastSerialNumber = parseInt(localStorage.getItem('lastSerialNumber')) || 0;
-              const newSerialNumber = lastSerialNumber + 1;
-              localStorage.setItem('lastSerialNumber', newSerialNumber); // Update serial number in localStorage
-              updateOrderNumber(); // Update order number
-              setValidated(false);
-              setApiData([...apiData, response.data]);
-              setCourier("");
-              setDispatched("")
-              setPortal("");
-              setPortalOrderno("")
-              setPortalOrderLineid("");
-              setQuantity("");
-              setShipbyDate("")
-              setProductDescription("");
-              setSellerSKU("");
-              setPortalSKU("")
-              setSelectedPortal("");
-              setCancel("");
-              setAwbNo("");
-              setOrderStatus("");
-              // Keep other state variables as they are
+          const itemsArray = [response.data]; // Store item data in an array
+          console.log("Item fetched successfully");
+          console.log("portalSKU = " + portalSKU);
+          // Fetch item portal mapping details
+          axios.get('http://localhost:8080/itemportalmapping/Portal/PortalSku/SellerSku', {
+            params: {
+              portal,
+              portalSKU,
+              sellerSKU,
+            },
+          })
+            .then(res => {
+              const ipm = res.data;
+              console.log("Item portal mapping fetched successfully");
+
+              // Form the data to be sent in the POST request
+              const formData = {
+                date,
+                orderNo,
+                portalOrderNo,
+                portalOrderLineId,
+                portalSKU,
+                productDescription,
+                shipByDate,
+                dispatched,
+                courier,
+                portal,
+                sellerSKU,
+                qty,
+                cancel,
+                awbNo,
+                orderStatus: "Order Received",
+                items: itemsArray,
+                itemPortalMapping: ipm,
+              };
+              console.log('Form data: ', formData);
+
+              // Send the POST request
+              axios.post('http://localhost:8080/orders', formData)
+                .then(response => {
+                  console.log('POST request successful:', response);
+                  toast.success('Order added successfully', {
+                    autoClose: 2000 // Close after 2 seconds
+                  });
+
+                  // Update serial number in localStorage
+                  const lastSerialNumber = parseInt(localStorage.getItem('lastSerialNumber')) || 0;
+                  const newSerialNumber = lastSerialNumber + 1;
+                  localStorage.setItem('lastSerialNumber', newSerialNumber); // Update serial number in localStorage
+
+                  // Update order number
+                  updateOrderNumber(); 
+
+                  // Reset form validation state
+                  setValidated(false);
+
+                  // Update the state with the new API data
+                  setApiData([...apiData, response.data]);
+
+                  // Reset form fields
+                  setCourier("");
+                  setDispatched("");
+                  setPortal("");
+                  setPortalOrderno("");
+                  setPortalOrderLineid("");
+                  setQuantity("");
+                  setShipbyDate("");
+                  setProductDescription("");
+                  setSellerSKU("");
+                  setPortalSKU("");
+                  setSelectedPortal("");
+                  setCancel("");
+                  setAwbNo("");
+                  setOrderStatus("");
+                })
+                .catch(error => {
+                  console.error('Error sending POST request:', error);
+                  toast.error('Failed to add Order: ' + error.response?.data?.message || error.message);
+                });
             })
             .catch(error => {
-              console.error('Error sending POST request:', error);
-              toast.error('Failed to add Order: ' + error.response.data.message);
+              console.error('Error fetching item portal mapping:', error);
+              toast.error('Failed to fetch item portal mapping: ' + error.response?.data?.message || error.message);
             });
         } else {
           console.error('No item found for the specified supplier and supplier SKU code.');
@@ -313,11 +340,13 @@ const handleSubmit = (event) => {
       })
       .catch(error => {
         console.error('Error fetching item:', error);
+        toast.error('Failed to fetch item: ' + error.response?.data?.message || error.message);
       });
   }
 
   setValidated(true);
 };
+
 
 const handleRowSubmit = () => {
   console.log("handleRowSubmit triggered");
@@ -997,37 +1026,38 @@ const exportToExcel = () => {
 
                     </td>
                     <td>
-                      {(() => {
-                        const date = new Date(order.date);
-                        const day = String(date.getDate()).padStart(2, '0');
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const year = date.getFullYear();
-                        return `${day}-${month}-${year}`;
-                      })()}
-                    </td>
-                  <td>{order.orderNo}</td>
-                  <td>{order.portal}</td>
-                  <td>{order.portalOrderNo}</td>
-                  <td>{order.portalOrderLineId}</td>
-                  <td>{order.portalSKU}</td>
-                  <td>{order.sellerSKU}</td>
-                  <td>{order.productDescription}</td>
-                  <td>{order.qty}</td>
-                  <td>
-                    {(() => {
-                      const date = new Date(order.shipByDate);
-                      const day = String(date.getDate()).padStart(2, '0');
-                      const month = String(date.getMonth() + 1).padStart(2, '0');
-                      const year = date.getFullYear();
-                      return `${day}-${month}-${year}`;
-                    })()}
-                  </td>
-                  <td>{order.dispatched}</td>
-                  <td>{order.courier}</td>
-                  <td>{order.cancel ? order.cancel : ''}</td>
-                  <td>{order.awbNo ? order.awbNo : ''}</td>
-                  <td>{order.orderStatus ? order.orderStatus : ''}</td>
-                </tr>
+  {(() => {
+    const date = new Date(order.date);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  })()}
+</td>
+<td>{order.orderNo ?? ''}</td>
+<td>{order.itemPortalMapping?.portal ?? ''}</td>
+<td>{order.portalOrderNo ?? ''}</td>
+<td>{order.portalOrderLineId ?? ''}</td>
+<td>{order.itemPortalMapping?.portalSkuCode ?? ''}</td>
+<td>{order.items[0]?.sellerSKUCode ?? ''}</td>
+<td>{order.itemPortalMapping?.item?.description ?? ''}</td>
+<td>{order.qty ?? ''}</td>
+<td>
+  {(() => {
+    const date = new Date(order.shipByDate);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  })()}
+</td>
+<td>{order.dispatched ?? ''}</td>
+<td>{order.courier ?? ''}</td>
+<td>{order.cancel ?? ''}</td>
+<td>{order.awbNo ?? ''}</td>
+<td>{order.orderStatus ?? ''}</td>
+</tr>
+
               ))}
             </tbody>
           </Table>

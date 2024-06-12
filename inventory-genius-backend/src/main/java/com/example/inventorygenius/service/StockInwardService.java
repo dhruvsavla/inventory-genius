@@ -99,7 +99,8 @@ public class StockInwardService {
         stockInward.setSkucode(stockInwardDetails.getSkucode());
         stockInward.setQty(stockInwardDetails.getQty());
         stockInward.setStock(stockInwardDetails.getStock());
-
+        stockInward.setItem(stockInwardDetails.getItem());
+        
         return stockInwardRepository.save(stockInward);
     }
 

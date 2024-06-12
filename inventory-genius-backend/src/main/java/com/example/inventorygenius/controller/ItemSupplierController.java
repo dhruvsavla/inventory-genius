@@ -17,8 +17,10 @@ import com.example.inventorygenius.entity.StockCount;
 import com.example.inventorygenius.entity.Supplier;
 import com.example.inventorygenius.repository.ItemRepository;
 import com.example.inventorygenius.repository.SupplierRepository;
+import com.example.inventorygenius.service.ItemSupplierService;
 import com.example.inventorygenius.service.StockCountService;
 
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +35,9 @@ public class ItemSupplierController {
 
     @Autowired
     SupplierRepository supplierRepository;
+
+    @Autowired
+    ItemSupplierService itemSupplierService;
 
     @Autowired
     StockCountService stockCountService;
@@ -81,38 +86,14 @@ public class ItemSupplierController {
 
     @PutMapping("/{itemId}")
     public ResponseEntity<Item> updateItem(@PathVariable Long itemId, @RequestBody Item updatedItem) {
-        Optional<Item> existingItemOptional = itemRepository.findById(itemId);
-        
-        if (existingItemOptional.isPresent()) {
-            Item existingItem = existingItemOptional.get();
-            // Update properties of the existing item with the new values
-            existingItem.setDescription(updatedItem.getDescription());
-            existingItem.setPackOf(updatedItem.getPackOf());
-            existingItem.setParentSKU(updatedItem.getParentSKU());
-            existingItem.setBarcode(updatedItem.getBarcode());
-            existingItem.setSKUCode(updatedItem.getSKUCode());
-            existingItem.setGroup1(updatedItem.getGroup1());
-            existingItem.setGroup2(updatedItem.getGroup2());
-            existingItem.setGroup3(updatedItem.getGroup3());
-            existingItem.setSizeRange(updatedItem.getSizeRange());
-            existingItem.setUnit(updatedItem.getUnit());
-            existingItem.setSellerSKUCode(updatedItem.getSellerSKUCode());
-            existingItem.setSellingPrice(updatedItem.getSellingPrice());
-            existingItem.setMrp(updatedItem.getMrp());
-            existingItem.setImg(updatedItem.getImg());
-            existingItem.setSuppliers(updatedItem.getSuppliers());
-            existingItem.setStorages(updatedItem.getStorages());
-            existingItem.setBoms(updatedItem.getBoms());
-            existingItem.setStockEntries(updatedItem.getStockEntries());
-            existingItem.setOrders(updatedItem.getOrders());
-            
-            // Save the updated item
-            Item savedItem = itemRepository.save(existingItem);
-            return ResponseEntity.ok(savedItem);
-        } else {
+        try {
+            Item updated = itemSupplierService.updateItem(itemId, updatedItem);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
+    
 
     // Delete an existing item
     @DeleteMapping("/{itemId}")

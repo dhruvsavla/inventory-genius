@@ -46,7 +46,7 @@ public class Bom {
     private Date defaultEndDate;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JsonIgnore
+    //@JsonIgnore
     @JoinTable(name = "bom_items", joinColumns = @JoinColumn(name = "bom_id"), inverseJoinColumns = @JoinColumn(name = "item_id"))
     // @JsonManagedReference(value = "bom")
     private List<Item> bomItems = new ArrayList<>();

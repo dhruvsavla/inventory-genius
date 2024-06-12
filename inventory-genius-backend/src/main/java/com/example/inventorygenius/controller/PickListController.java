@@ -152,10 +152,10 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
             skuCode += order.getItems().get(0).getParentSKU();
             for (Bom bom : order.getItems().get(0).getBoms()){
                 for(BomItem bomItem : bom.getItemsInBom()){
-                if (bomItem.getBomItem().equals(order.getItems().get(0).getParentSKU())){
+                if (bomItem.getItem().getSKUCode().equals(order.getItems().get(0).getParentSKU())){
                     additionalCount = Double.parseDouble(String.valueOf(order.getQty())) * Double.parseDouble(bomItem.getQty());
                 }
-                if (!(bomItem.getBomItem().equals(order.getItems().get(0).getParentSKU()))){
+                if (!(bomItem.getItem().getSKUCode().equals(order.getItems().get(0).getParentSKU()))){
                     StockCount scBom = new StockCount();
                     scBom = stockCountService.getStockCountBySKUCode(bomItem.getBomItem());
 
@@ -199,10 +199,10 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
                 stock.setSubQty("0");
                 for (Bom bom : item.getBoms()){
                     for (BomItem bomItem : bom.getItemsInBom()){
-                    if (bomItem.getBomItem().equals(item.getParentSKU())){
+                    if (bomItem.getItem().getSKUCode().equals(item.getParentSKU())){
                         stock.setAddQty(String.valueOf(order.getQty() * Double.parseDouble(bomItem.getQty())));
                     }
-                    if (!bomItem.getBomItem().equals(item.getParentSKU())){
+                    if (!bomItem.getItem().getSKUCode().equals(item.getParentSKU())){
                         Stock s = new Stock();
                         s.setDate(new Date());
                         s.setSubQty("0");
@@ -244,7 +244,7 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
                 skuCode += order.getItems().get(0).getParentSKU();
                 for (Bom bom : order.getItems().get(0).getBoms()){
                     for(BomItem bomItem : bom.getItemsInBom()){
-                    if (bomItem.getBomItem().equals(order.getItems().get(0).getParentSKU())){
+                    if (bomItem.getItem().getSKUCode().equals(order.getItems().get(0).getParentSKU())){
                         additionalCount = Double.parseDouble(String.valueOf(order.getQty())) * Double.parseDouble(bomItem.getQty());
                     }
                 }
@@ -371,13 +371,13 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
     
             // Aggregate qty and pickQty for each sellerSKU within the group
             for (PickListData p : group) {
-                String sellerSKU = p.getSellerSKU();
+                String sellerSKU = p.getItem().getSellerSKUCode();
                 double qty = p.getQty();
                 double pickQty = p.getPickQty();
                 Date date = new Date();
-                String description = p.getDescription();
-                String bin = p.getBinNumber();
-                String rack = p.getRackNumber();
+                String description = p.getItem().getDescription();
+                String bin = p.getStorage().getBinNumber();
+                String rack = p.getStorage().getRackNumber();
                 Long pickListId = p.getPickListId();
     
                 if (aggregatedDataBySellerSKU.containsKey(sellerSKU)) {

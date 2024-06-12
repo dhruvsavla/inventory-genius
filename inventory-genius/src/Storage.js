@@ -137,11 +137,13 @@ const handleSubmit = (event) => {
         console.log("data = " + response.data);
         if (response.data) {
           const itemId = response.data.itemId;
+          const item = response.data;
           const formData = {
             binNumber,
             rackNumber,
             skucode,
-            qty
+            qty,
+            items: [item]
           };
           console.log('form data: ', formData);
           axios.post(`http://localhost:8080/storage/${itemId}`, formData)
@@ -513,7 +515,7 @@ const exportToExcel = () => {
       </td>
       <td>{storage.rackNumber}</td>
       <td>{storage.binNumber}</td>
-      <td>{storage.skucode}</td>
+      <td>{storage.items[0].skucode}</td>
       <td>{storage.qty !== null ? storage.qty : ''}</td> {/* Conditionally render qty */}
     </tr>
   ))}

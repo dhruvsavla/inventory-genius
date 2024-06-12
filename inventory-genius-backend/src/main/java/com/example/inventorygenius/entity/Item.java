@@ -87,7 +87,7 @@ public class Item {
     private List<Order> orders = new ArrayList<>();
 
     @ManyToMany(mappedBy = "bomItems")
-    //@JsonIgnore
+    @JsonIgnore
     private List<Bom> boms = new ArrayList<>();
 
     // @ManyToOne(fetch = FetchType.EAGER)
@@ -95,18 +95,25 @@ public class Item {
     // private Supplier supplier;
 
     @ManyToMany(mappedBy = "items", fetch = FetchType.EAGER)
+    @JsonIgnore
     private List<Storage> storages = new ArrayList<>();
 
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Stock> stockEntries = new ArrayList<>();
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL)
-    private List<Stock> stockEntries = new ArrayList<>();
+    @JsonIgnore
+    private List<StockInward> stockInwardEntries = new ArrayList<>();
 
      @OneToOne
     @JoinColumn(name = "return_id")
     private Return order;
 
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<BomItem> bomItems = new ArrayList<>();
 
-    
     @ManyToMany()
    // @JsonBackReference
     @JoinTable(name = "item_supplier_table", 
@@ -122,6 +129,14 @@ public class Item {
     @OneToOne(mappedBy = "item") // Mapped by field in StockCount
     @JsonIgnore
     private StockCount stockCount;
+
+    @OneToMany(mappedBy = "item")
+    @JsonIgnore
+    private List<PickListData> pickListData = new ArrayList<>();
+
+    @OneToMany(mappedBy = "item")
+    @JsonIgnore
+    private List<PackingListData> packingListData = new ArrayList<>();
 
     public Item() {
 
@@ -358,6 +373,36 @@ public String toString() {
             '}';
 }
 
-   
+    public List<StockInward> getStockInwardEntries() {
+        return stockInwardEntries;
+    }
+
+    public void setStockInwardEntries(List<StockInward> stockInwardEntries) {
+        this.stockInwardEntries = stockInwardEntries;
+    }
+
+    public List<BomItem> getBomItems() {
+        return bomItems;
+    }
+
+    public void setBomItems(List<BomItem> bomItems) {
+        this.bomItems = bomItems;
+    }
+
+    public List<PickListData> getPickListData() {
+        return pickListData;
+    }
+
+    public void setPickListData(List<PickListData> pickListData) {
+        this.pickListData = pickListData;
+    }
+
+    public List<PackingListData> getPackingListData() {
+        return packingListData;
+    }
+
+    public void setPackingListData(List<PackingListData> packingListData) {
+        this.packingListData = packingListData;
+    }
 
 }

@@ -48,7 +48,6 @@ public class Stock {
     private String number;
 
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "item_id")
     private Item item;
 

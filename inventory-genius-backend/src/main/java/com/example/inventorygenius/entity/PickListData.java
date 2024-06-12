@@ -2,9 +2,12 @@ package com.example.inventorygenius.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.util.Date;
@@ -54,8 +57,20 @@ public class PickListData {
     @Column(name = "pick_qty")
     private Double pickQty;
 
+    @ManyToOne()
+    @JoinColumn(name = "order_id")
+    private Order order;
+
+    @ManyToOne()
+    @JoinColumn(name = "storage_id")
+    private Storage storage;
+
+    @ManyToOne()
+    @JoinColumn(name = "item_id")
+    private Item item;
+
     public PickListData() {
-        
+
     }
     
     public PickListData(Long pickListId, Long pickListNumber, Date date, String portalOrderNo, String orderNo,
@@ -179,4 +194,29 @@ public class PickListData {
     public void setPickQty(Double pickQty) {
         this.pickQty = pickQty;
     }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    public Storage getStorage() {
+        return storage;
+    }
+
+    public void setStorage(Storage storage) {
+        this.storage = storage;
+    }
+
+    public Item getItem() {
+        return item;
+    }
+
+    public void setItem(Item item) {
+        this.item = item;
+    }
+
 }

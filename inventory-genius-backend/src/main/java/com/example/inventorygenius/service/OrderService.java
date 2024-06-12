@@ -2,6 +2,7 @@ package com.example.inventorygenius.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.inventorygenius.entity.Item;
 import com.example.inventorygenius.entity.Order;
@@ -96,6 +97,9 @@ public class OrderService {
             existingOrder.setItems(updatedOrder.getItems());
             existingOrder.setAwbNo(updatedOrder.getAwbNo());
             existingOrder.setOrderStatus(updatedOrder.getOrderStatus());
+            existingOrder.setItemPortalMapping(updatedOrder.getItemPortalMapping());
+            existingOrder.setPicklist(updatedOrder.getPicklist());
+            
             return orderRepository.save(existingOrder);
         } else {
             return null;

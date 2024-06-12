@@ -70,5 +70,13 @@ public class ItemPortalMappingController {
         }
         return sellerSkus;
     }
+
+    @GetMapping("/Portal/PortalSku/SellerSku")
+    public ItemPortalMapping getItemPortalMappingBuPortalPortalSKUSellerSku(
+        @RequestParam String portal,
+        @RequestParam String portalSKU,
+        @RequestParam String sellerSKU) {
+        return itemService.getItemPortalMappings(portal, portalSKU, sellerSKU);
+    }
     
 }

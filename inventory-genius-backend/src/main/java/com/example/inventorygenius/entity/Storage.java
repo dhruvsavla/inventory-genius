@@ -40,12 +40,17 @@ public class Storage {
     private String qty;
 
     @ManyToMany(fetch = FetchType.EAGER)
+    //@JsonIgnore
     @JoinTable(
         name = "storage_item",
         joinColumns = @JoinColumn(name = "storage_id"),
         inverseJoinColumns = @JoinColumn(name = "item_id")
     )
     private List<Item> items = new ArrayList<>();
+
+    @OneToMany(mappedBy = "storage")
+    @JsonIgnore
+    private List<PickListData> pickListData = new ArrayList<>();
 
     public Storage() {
 
@@ -107,13 +112,21 @@ public class Storage {
         this.items = items;
     }
 
-    @JsonIgnore
+    //@JsonIgnore
     public List<Item> getItems() {
         return items;
     }
 
     public void setItems(List<Item> items) {
         this.items = items;
+    }
+
+    public List<PickListData> getPickListData() {
+        return pickListData;
+    }
+
+    public void setPickListData(List<PickListData> pickListData) {
+        this.pickListData = pickListData;
     }
 
 }

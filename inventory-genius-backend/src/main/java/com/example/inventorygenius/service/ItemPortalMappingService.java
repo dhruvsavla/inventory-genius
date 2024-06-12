@@ -38,8 +38,14 @@ public class ItemPortalMappingService {
                 ipm.setPortalSkuCode(ipmDetails.getPortalSkuCode());
                 ipm.setSellerSkuCode(ipmDetails.getSellerSkuCode());
                 ipm.setSupplier(ipmDetails.getSupplier());
+                ipm.setOrders(ipmDetails.getOrders());
 
 
         return itemportalmappingRepository.save(ipm);
+    }
+
+    public ItemPortalMapping getItemPortalMappings(String portal, String portalSkuCode, String sellerSkuCode) {
+        return itemportalmappingRepository.findByPortalAndPortalSkuCodeAndSellerSkuCode(
+            portal, portalSkuCode, sellerSkuCode);
     }
 }

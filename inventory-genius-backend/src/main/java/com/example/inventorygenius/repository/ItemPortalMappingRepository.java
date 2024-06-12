@@ -7,4 +7,6 @@ import com.example.inventorygenius.entity.ItemPortalMapping;
 @Repository
 public interface ItemPortalMappingRepository extends JpaRepository<ItemPortalMapping, Long> {
     // Define additional methods if needed
+    ItemPortalMapping findByPortalAndPortalSkuCodeAndSellerSkuCode(
+        String portal, String portalSkuCode, String sellerSkuCode);
 }

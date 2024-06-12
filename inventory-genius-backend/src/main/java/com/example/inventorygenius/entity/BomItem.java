@@ -30,6 +30,10 @@ public class BomItem {
     @JoinColumn(name = "bom_id")
     private Bom bom;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "item_id")
+    private Item item;
+
     public BomItem () {
 
     }
@@ -71,6 +75,14 @@ public class BomItem {
 
     public void setBom(Bom bom) {
         this.bom = bom;
+    }
+
+    public Item getItem() {
+        return item;
+    }
+
+    public void setItem(Item item) {
+        this.item = item;
     }
 
 }

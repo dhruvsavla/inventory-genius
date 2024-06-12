@@ -1,5 +1,10 @@
 package com.example.inventorygenius.entity;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -8,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,6 +22,7 @@ public class ItemPortalMapping {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "item_portal_mapping_id")
     private Long id;
 
     @Column(name = "portal")
@@ -34,6 +41,10 @@ public class ItemPortalMapping {
     @ManyToOne()
     @JoinColumn(name = "supplier_id") // Assuming this is the foreign key column in item_portal_mapping table
     private Supplier supplier;
+
+    @OneToMany(mappedBy = "itemPortalMapping", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Order> orders;
 
     public ItemPortalMapping() {
 
@@ -97,4 +108,13 @@ public class ItemPortalMapping {
     public void setSupplier(Supplier supplier) {
         this.supplier = supplier;
     }
+
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<Order> orders) {
+        this.orders = orders;
+    }
+
 }

@@ -252,7 +252,29 @@ const PicklistComponent = () => {
     axios.post('http://localhost:8080/picklists', { pickListNumber, orders: selectedOrders})
       .then(response => {
         console.log('Picklist generated successfully:', response.data);
-        
+        setSelectedOrderData([]);
+        setSelectedRows([]);
+
+        axios.get('http://localhost:8080/picklists/merged/picklist')
+        .then(response => {
+          setPicklistData(response.data);
+          toast.success('PickList generated successfully', {
+            autoClose: 2000
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching picklists:', error);
+          toast.error('Failed to generate PickList: ' + error.message);
+        });
+
+        axios.get('http://localhost:8080/picklists/not/generated/orders')
+      .then(response => {
+        setOrders(response.data);
+      })
+      .catch(error => {
+        console.log("error getting orders: " + error);
+      })
+
         toast.success('PickList generated successfully', {
           autoClose: 2000 
         });
@@ -340,6 +362,13 @@ const handleDelete = (pickListNumber) => {
       autoClose: 2000 // Close after 2 seconds
     });
     setPicklistData(prevData => prevData.filter(row => row.pickListNumber !== pickListNumber));
+    axios.get('http://localhost:8080/picklists/not/generated/orders')
+      .then(response => {
+        setOrders(response.data);
+      })
+      .catch(error => {
+        console.log("error getting orders: " + error);
+      })
   })
   .catch(error => {
     // Handle error
@@ -526,7 +555,7 @@ const handleDropdownChange = (event, orderNo) => {
         <td>{order.orderNo}</td>
         <td>{order.portalOrderNo}</td>
         <td>{order.portal}</td>
-        <td>{order.sellerSKU}</td>
+        <td>{order.items[0].sellerSKUCode}</td>
         <td>{order.qty}</td>
         <td>
           <Form.Select
@@ -658,7 +687,7 @@ const handleDropdownChange = (event, orderNo) => {
             return `${day}-${month}-${year}`;
           })()}
         </td>
-        <td>{picklist.sellerSKU}</td>
+        <td>{picklist.sellerSKU ? picklist.sellerSKU : ''}</td>
         <td>{picklist.qty}</td>
         <td>{picklist.pickQty}</td>
         <td>{picklist.binNumber || "N/A"}</td>

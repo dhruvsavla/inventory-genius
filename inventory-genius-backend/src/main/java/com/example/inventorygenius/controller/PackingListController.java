@@ -193,11 +193,12 @@ public class PackingListController {
 
         for (PickListData p : pickListDatas){
             OrderData o = new OrderData();
-            o.setOrderNo(p.getOrderNo());
-            o.setDescription(p.getDescription());
+            o.setOrderNo(p.getOrder().getOrderNo());
+            o.setDescription(p.getItem().getDescription());
             o.setDate(p.getDate());
-            o.setPortal(p.getPortal());
+            o.setPortal(p.getOrder().getItemPortalMapping().getPortal());
             o.setQty(p.getQty());
+            o.setSellerSKU(p.getItem().getSellerSKUCode());
             o.setPickQty(p.getPickQty());
             orderDataList.add(o);
         }

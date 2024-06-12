@@ -34,7 +34,6 @@ public class StockInward {
     private String qty;
 
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "item_id")
     private Item item;
 

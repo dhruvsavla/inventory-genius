@@ -192,6 +192,27 @@ selectedOrder.forEach(order => {
   axios.post('http://localhost:8080/packinglistdata', order)
     .then(response => {
       console.log("after post" + JSON.stringify(response.data));
+
+      setSelectedOrderData([]);
+      setSelectedRows([]);
+
+      axios.get('http://localhost:8080/packinglist/not/generated/packinglist/orders')
+      .then(response => {
+        setOrders(response.data);
+      })
+      .catch(error => {
+        console.log("error getting orders: " + error);
+      })
+
+      axios.get('http://localhost:8080/packinglist/getData')
+      .then(response => {
+        const mergedPicklistData = mergeRowsWithSamePicklist(response.data);
+        setPicklistData(response.data);
+        console.log("picklistData = " + JSON.stringify(picklistData));
+      })
+      .catch(error => {
+        console.error(error);
+      });
     })
     .catch(error => {
       console.error('Error generating picklist data:', error);
@@ -211,6 +232,8 @@ selectedOrder.forEach(order => {
         console.error('Error generating picklist:', error);
         toast.error('Failed to generate PickList: ' + error.message);
       });
+
+      
   };
   
 
@@ -281,26 +304,43 @@ selectedOrder.forEach(order => {
 
 const handleDelete = (packingListNumber) => {
   console.log("Deleting row with packingListNumber:", packingListNumber);
-  // Remove the row from the table
 
+  // Make DELETE request to remove the row from the database
   axios.delete(`http://localhost:8080/packinglistdata/packinglistData/${packingListNumber}`)
-  .then(response => {
-    // Handle success response
-    console.log('Row deleted successfully.');
-    toast.success('PackingList deleted successfully', {
-      autoClose: 2000 // Close after 2 seconds
-    });
-    setPicklistData(prevData => prevData.filter(row => row.packingListNumber !== packingListNumber));
+    .then(response => {
+      // Handle success response
+      console.log('Row deleted successfully.');
+      toast.success('PackingList deleted successfully', {
+        autoClose: 2000 // Close after 2 seconds
+      });
 
-  })
-  .catch(error => {
-    // Handle error
-    console.error('Error deleting row:', error);
-    toast.error('Failed to delete PackingList: ' + error.message);
-  });
+      // Update the picklistData state to remove the deleted row
+      setPicklistData(prevData => prevData.filter(row => row.packingListNumber !== packingListNumber));
+      axios.get('http://localhost:8080/packinglist/getData')
+      .then(response => {
+        const mergedPicklistData = mergeRowsWithSamePicklist(response.data);
+        setPicklistData(response.data);
+        console.log("picklistData = " + JSON.stringify(picklistData));
+      })
+      .catch(error => {
+        console.error(error);
+      });
+      // Fetch updated orders
+      return axios.get('http://localhost:8080/packinglist/not/generated/packinglist/orders');
+    })
+    .then(response => {
+      // Update the orders state with the new data
+      setOrders(response.data);
+    })
+    .catch(error => {
+      // Handle error
+      console.error('Error deleting row:', error);
+      toast.error('Failed to delete PackingList: ' + error.message);
+    });
 
   console.log("After deletion, apiData:", apiData);
 };
+
 
 // const handleRowClick = (event, order) => {
 //   const isChecked = selectedRows.includes(order.orderNo);
@@ -533,7 +573,7 @@ const formatDate = (dateString) => {
       </td>
       <td>{order.portal}</td>
       <td>{order.qty}</td>
-      <td>{order.productDescription}</td>
+      <td>{order.items[0].description}</td>
     </tr>
   ))}
 </tbody>
@@ -664,8 +704,8 @@ const formatDate = (dateString) => {
               return `${day}-${month}-${year}`;
             })()}
           </td>
-          <td>{picklist.portalOrderNo}</td>
-          <td>{picklist.portal}</td>
+          <td>{picklist.order.portalOrderNo}</td>
+          <td>{picklist.order.itemPortalMapping.portal}</td>
           <td>{picklist.qty}</td>
           <td>{picklist.packQty}</td>
         </tr>

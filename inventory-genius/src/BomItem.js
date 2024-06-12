@@ -153,8 +153,19 @@ const handleSubmit = (event) => {
       event.stopPropagation();
       setValidated(true); 
       return;
-    }
-  
+    }else{
+        axios.get(`http://localhost:8080/item/supplier/search/skucode/${bomItem}`)
+      .then(response => {
+        console.log("item = " + JSON.stringify(response.data));
+        // Check if item exists
+        if (response.data.length === 0) {
+          toast.error('Item not found with SKU code: ' + bomItem);
+          return;
+        }
+
+        // Extract item from response data
+        const item = response.data;
+
     axios.get(`http://localhost:8080/boms/bom/${bomCode}`)
       .then((response) => {
         const bom = response.data; // Assuming response.data is the bom object
@@ -163,7 +174,8 @@ const handleSubmit = (event) => {
         const formData = {
           bomItem,
           qty,
-          bom // Include the bom object directly in formData
+          bom,// Include the bom object directly in formData
+            item
         };
   
         return axios.post(`http://localhost:8080/bomItems/create/${bomId}`, formData);
@@ -184,6 +196,8 @@ const handleSubmit = (event) => {
         console.error('Error in request:', error);
         toast.error('Failed to add BOM Item: ' + error.response?.data?.message || error.message);
       });
+    })
+    }
   };
   
 
@@ -502,8 +516,9 @@ useEffect(() => {
 
       </td>
       <td>{bomItems.bom && bomItems.bom.bomCode ? bomItems.bom.bomCode : ''}</td>
-      <td>{bomItems.bomItem}</td>
-      <td>{bomItems.qty}</td>
+        <td>{bomItems.item && bomItems.item.skucode ? bomItems.item.skucode : ''}</td>
+        <td>{bomItems.qty ? bomItems.qty : ''}</td>
+
     </tr>
   ))}
 </tbody>

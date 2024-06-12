@@ -44,6 +44,8 @@ public class BomItemService {
         BomItem bomItem = getBomItemById(bomItemId);
         bomItem.setBomItem(bomItemDetails.getBomItem());
         bomItem.setQty(bomItemDetails.getQty());
+        bomItem.setBom(bomItemDetails.getBom());
+        bomItem.setItem(bomItemDetails.getItem());
         return bomItemRepository.save(bomItem);
     }
 

@@ -518,7 +518,7 @@ const exportToExcel = () => {
                         return `${day}-${month}-${year}`;
                       })()}
                     </td>
-                  <td>{stock.skucode}</td>
+                  <td>{stock.item ? stock.item.skucode : ''}</td>
                   <td>{stock.qty}</td>
                 </tr>
               ))}

@@ -4,6 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.example.inventorygenius.repository.PackingListDataRepository;
 import com.example.inventorygenius.entity.PackingListData;
+import com.example.inventorygenius.entity.Order;
+import com.example.inventorygenius.entity.Item;
+import com.example.inventorygenius.service.OrderService;
+import com.example.inventorygenius.service.ItemSupplierService;
+
 
 import java.util.List;
 
@@ -12,6 +17,12 @@ public class PackingListDataService {
 
     @Autowired
     private PackingListDataRepository packingListDataRepository;
+
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private ItemSupplierService itemSupplierService;
 
     // Get all picklist data
     public List<PackingListData> getAllPackingListData() {
@@ -25,6 +36,16 @@ public class PackingListDataService {
 
     // Add new picklist data
     public PackingListData addPackingListData(PackingListData packingListData) {
+        List<Order> orders = orderService.findByOrderNo(packingListData.getOrderNo());
+        for(Order o : orders){
+            packingListData.setOrder(o);
+            break;
+        }
+        System.out.println("sellerSKU = " + packingListData.getSellerSKU());
+        System.out.println("description = " + packingListData.getDescription());
+        Item item = itemSupplierService.findItemsBySellerSKUAndDescription(packingListData.getSellerSKU(), packingListData.getDescription());
+        System.out.println("picklist item sku = " + item.getSKUCode());
+        packingListData.setItem(item);
         return packingListDataRepository.save(packingListData);
     }
 

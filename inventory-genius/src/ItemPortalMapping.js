@@ -617,7 +617,7 @@ const handleSupplierChange = (event, name) => {
                   <td>{ipm.portal ? ipm.portal : ''}</td>
                   <td>{ipm.portalSkuCode ? ipm.portalSkuCode : ''}</td>
                   <td>{ipm.supplier ? ipm.supplier.supplierName : ''}</td>
-                  <td>{ipm.sellerSkuCode ? ipm.sellerSkuCode : ''}</td>
+                  <td>{ipm.item.sellerSKUCode ? ipm.item.sellerSKUCode : ''}</td>
                 </tr>
               ))}
             </tbody>

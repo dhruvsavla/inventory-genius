@@ -29,34 +29,49 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
     private Long orderId;
+
     @Column(name = "Date")
     private Date Date;
+
     @Column(name = "order_no")
     private String orderNo;
+
     @Column(name = "portal")
     private String portal;
+
     @Column(name = "portal_order_no")
     private String portalOrderNo;
+
     @Column(name = "portal_order_line_id")
     private String portalOrderLineId;
+
     @Column(name = "portal_sku")
     private String portalSKU;
+
     @Column(name = "seller_sku")
     private String sellerSKU;
+
     @Column(name = "product_description")
     private String productDescription;
+
     @Column(name = "quantity")
     private double qty;
+
     @Column(name = "ship_by_date")
     private Date shipByDate;
+
     @Column(name = "dispatched")
     private String dispatched;
+
     @Column(name = "courier")
     private String courier;
+
     @Column(name = "cancel")
     private String cancel;
+
     @Column(name = "order_status")
     private String orderStatus;
+
     @Column(name = "awb_no")
     private String awbNo;
     
@@ -69,6 +84,18 @@ public class Order {
     @JsonIgnore
     @JoinColumn(name = "picklist_id")
     private PickList picklist;
+
+    @ManyToOne()
+    @JoinColumn(name = "id")
+    private ItemPortalMapping itemPortalMapping;
+
+    @OneToMany(mappedBy = "order")
+    @JsonIgnore
+    private List<PickListData> pickListData = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order")
+    @JsonIgnore
+    private List<PackingListData> packingListData = new ArrayList<>();
 
     public Order() {
 
@@ -245,6 +272,30 @@ public class Order {
 
     public void setAwbNo(String awbNo) {
         this.awbNo = awbNo;
+    }
+
+    public ItemPortalMapping getItemPortalMapping() {
+        return itemPortalMapping;
+    }
+
+    public void setItemPortalMapping(ItemPortalMapping itemPortalMapping) {
+        this.itemPortalMapping = itemPortalMapping;
+    }
+
+    public List<PickListData> getPickListData() {
+        return pickListData;
+    }
+
+    public void setPickListData(List<PickListData> pickListData) {
+        this.pickListData = pickListData;
+    }
+
+    public List<PackingListData> getPackingListData() {
+        return packingListData;
+    }
+
+    public void setPackingListData(List<PackingListData> packingListData) {
+        this.packingListData = packingListData;
     }
     
 }

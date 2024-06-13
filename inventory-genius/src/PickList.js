@@ -155,8 +155,13 @@ const PicklistComponent = () => {
       setSelectedRows(updatedSelectedRows);
   
       if (event.target.checked) {
+        
         const promises = orders.map(order =>
+          
           axios.get(`http://localhost:8080/picklists/getSelectedOrderData?orderNo=${order.orderNo}&bomCode=${bomCodes[order.orderNo]}`)
+          .then (response => {
+            console.log("selected bomCode = " + bomCodes[order.orderNo]);
+      })
         );
   
         Promise.all(promises)

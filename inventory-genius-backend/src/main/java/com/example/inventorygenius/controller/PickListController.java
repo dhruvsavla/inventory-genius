@@ -317,12 +317,11 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
                         throw new IllegalArgumentException("Select a bomCode");
                     }
                     if(item.getBoms().size() > 0){
-                        if (isCurrentDateBetween(bom)){
-                            bomC = bom.getBomCode();
-                        }
-                        else if (!isCurrentDateBetween(bom)){
+                        
+                        
+                       
                             bomC = bomCode;
-                        }
+                        
                     }
                     if (item.getBoms().size() == 0) {
                         bomC = "";
@@ -331,6 +330,7 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
                 }
             }
        }
+       System.out.println("bom in picklist merge rows = " + bomC);
        List<OrderData> oo = new ArrayList<>();
        if(bomC.length() > 0){
         Bom bom = bomService.getBomByBomCode(bomC);

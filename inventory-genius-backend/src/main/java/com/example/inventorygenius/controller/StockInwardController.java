@@ -94,9 +94,10 @@ public class StockInwardController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteStockInward(@PathVariable("id") Long id) {
-        System.out.println("deleted"); 
-        stockInwardService.deleteStockInwardById(id);
+    public void deleteStockInward(@PathVariable("id") Long stockInwardId) {
+        System.out.println("Deleting StockInward with id: " + stockInwardId);
+        stockInwardService.deleteStockInwardById(stockInwardId);
+        System.out.println("deleted");
     }
 
     @PutMapping("/{id}")

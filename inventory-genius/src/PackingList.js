@@ -23,9 +23,9 @@ const PicklistComponent = () => {
   const [picklistData, setPicklistData] = useState([]);
   const [orderData, setOrderData] = useState([]);
   const [orders, setOrders] = useState([]);
-  const rowsPerPageOptions = [5, 10, 20];
+  const rowsPerPageOptions = [10, 20, 50];
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [selectedOrderData, setSelectedOrderData] = useState([]);
 

@@ -70,8 +70,8 @@ function Item() {
   const [searchTermSupplier, setSearchTermSupplier] = useState("");
   const [isRotating, setIsRotating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const rowsPerPageOptions = [5, 10, 20];
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const rowsPerPageOptions = [10, 20, 50];
 
   // Function to handle change in items per page
   const handleItemsPerPageChange = (e) => {

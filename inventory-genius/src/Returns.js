@@ -50,8 +50,8 @@ function Return() {
   const [searchTermSentForRaisingTicketOn, setSeaarchTermSentForRaisingTicketOn] = useState("");
   const [searchTermSentForTicketOn, setSeaarchTermSentForTicketOn] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  const rowsPerPageOptions = [5, 10, 20];
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const rowsPerPageOptions = [10, 20, 50];
 
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(parseInt(e.target.value));

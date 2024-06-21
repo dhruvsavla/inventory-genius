@@ -218,78 +218,73 @@ const PicklistComponent = () => {
       });
   };
   
-  const generatePicklistWithNumber = (pickListNumber) => {
-    // Filter the entire order objects instead of just the items
+
+const generatePicklistWithNumber = async (pickListNumber) => {
     const selectedOrders = orders.filter(order => selectedRows.includes(order.orderNo));
-    const selectedOrderDatas = orderData.filter(orderData => selectedRows.includes(orderData.orderNo));
-    console.log("selected rows = " + selectedRows);
+    //const selectedOrderDatas = orderData.filter(orderData => selectedRows.includes(orderData.orderNo));
+  //console.log("selected order datas 101 = " + JSON.stringify(selectedOrderDatas));
+    try {
+        // First, post to 'picklistdata' endpoint for each selected order data
+        await Promise.all(selectedOrderData.map(async s => {
+            const selectedOrder = {
+                pickListNumber: pickListNumber,
+                date: s.date,
+                portalOrderNo: s.portalOrderNo,
+                orderNo: s.orderNo,
+                bomCode: s.bomCode,
+                portal: s.portal,
+                sellerSKU: s.sellerSKU,
+                qty: s.qty,
+                description: s.description,
+                binNumber: s.binNumber,
+                rackNumber: s.rackNumber,
+                pickQty: s.pickQty
+            };
 
-    console.log("selected ordersData = " + JSON.stringify(selectedOrderDatas));
+            console.log("selected order = " + JSON.stringify(selectedOrder));
 
-    console.log("setselectedorderData= " + JSON.stringify(selectedOrderData));
+            try {
+                const response = await axios.post('http://localhost:8080/picklistdata', selectedOrder);
+                console.log('Picklist data generated successfully:', response.data);
+            } catch (error) {
+                console.error('Error generating picklist data:', error);
+                throw new Error('Failed to generate picklist data');
+            }
+        }));
 
-    selectedOrderData.forEach(selectedOrderData => {
-      const selectedOrder = {
-          pickListNumber: pickListNumber,
-          date: selectedOrderData.date,
-          portalOrderNo: selectedOrderData.portalOrderNo,
-          orderNo: selectedOrderData.orderNo,
-          bomCode: selectedOrderData.bomCode,
-          portal: selectedOrderData.portal,
-          sellerSKU: selectedOrderData.sellerSKU,
-          qty: selectedOrderData.qty,
-          description: selectedOrderData.description,
-          binNumber: selectedOrderData.binNumber,
-          rackNumber: selectedOrderData.rackNumber,
-          pickQty: selectedOrderData.pickQty
-      };
-  
-      axios.post('http://localhost:8080/picklistdata', selectedOrder)
-          .then(response => {
-              console.log("after post" + response.data);
-          })
-          .catch(error => {
-              console.error('Error generating picklist data:', error);
-          });
-  });
-    
-    // Assuming your API endpoint for generating a picklist is '/generate-picklist'
-    axios.post('http://localhost:8080/picklists', { pickListNumber, orders: selectedOrders})
-      .then(response => {
+        // Then, post to 'picklists' endpoint for all selected orders
+        const response = await axios.post('http://localhost:8080/picklists', {
+            pickListNumber,
+            orders: selectedOrders
+        });
+
         console.log('Picklist generated successfully:', response.data);
+
+        // Optionally, update state or perform other actions here after both requests succeed
         setSelectedOrderData([]);
         setSelectedRows([]);
 
-        axios.get('http://localhost:8080/picklists/merged/picklist')
-        .then(response => {
-          setPicklistData(response.data);
-          toast.success('PickList generated successfully', {
-            autoClose: 2000
-          });
-        })
-        .catch(error => {
-          console.error('Error fetching picklists:', error);
-          toast.error('Failed to generate PickList: ' + error.message);
+        // Fetch updated picklist and orders data
+        await Promise.all([
+            axios.get('http://localhost:8080/picklists/merged/picklist'),
+            axios.get('http://localhost:8080/picklists/not/generated/orders')
+        ]).then(([picklistResponse, ordersResponse]) => {
+            setPicklistData(picklistResponse.data);
+            setOrders(ordersResponse.data);
+            toast.success('PickList generated successfully', {
+                autoClose: 2000
+            });
+        }).catch(error => {
+            console.error('Error fetching picklists or orders:', error);
+            toast.error('Failed to fetch updated data after generating PickList');
         });
 
-        axios.get('http://localhost:8080/picklists/not/generated/orders')
-      .then(response => {
-        setOrders(response.data);
-      })
-      .catch(error => {
-        console.log("error getting orders: " + error);
-      })
-
-        toast.success('PickList generated successfully', {
-          autoClose: 2000 
-        });
-        // Optionally, you can update state or perform other actions here
-      })
-      .catch(error => {
+    } catch (error) {
         console.error('Error generating picklist:', error);
         toast.error('Failed to generate PickList: ' + error.message);
-      });
+    }
 };
+
 
 
 

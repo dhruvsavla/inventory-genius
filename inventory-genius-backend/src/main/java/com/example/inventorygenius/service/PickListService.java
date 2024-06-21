@@ -145,13 +145,10 @@ public class PickListService {
                         orderData.setDate(order.getDate());
                         orderData.setOrderNo(order.getOrderNo());
                         orderData.setPortal(order.getPortal());
-                        orderData.setSellerSKU(item.getSellerSKUCode());
                         orderData.setDescription(order.getProductDescription());
                         orderData.setImg(item.getImg());
                         orderData.setBomCode(bom.getBomCode());
-                        if (item.getBoms().size() > 0){
-                            System.out.println("size = " + item.getBoms().size());
-                        
+                        if (item.getBoms().size() > 0){                        
                             for (BomItem bomItem : bom.getItemsInBom()){
                             if (bomItem.getItem().getSKUCode().equals(item.getParentSKU())) {
                                 orderData.setPickQty((order.getQty()) * Double.parseDouble(bomItem.getQty()));
@@ -217,6 +214,8 @@ public class PickListService {
                     }
                     
                     orderData.setQty(order.getQty());
+                    System.out.println("seller sku for order data = " + order.getItems().get(0).getSellerSKUCode());
+                    orderData.setSellerSKU(order.getItems().get(0).getSellerSKUCode());
                     orderDataList.add(orderData);
                         totalQty = 0;
                 }
@@ -258,6 +257,7 @@ public class PickListService {
                             if (bomItem.getItem().getSKUCode().equals(item.getParentSKU())) {
                                 System.out.println("bomItem = " + bomItem.getBomItem());
                                 orderData.setPickQty((order.getQty()) * Double.parseDouble(bomItem.getQty()));
+                                orderData.setSellerSKU(bomItem.getItem().getSellerSKUCode());
                                 totalQty += order.getQty() * Double.parseDouble(bomItem.getQty());
 
                                 System.out.println("item parent = " + item.getParentSKU());
@@ -427,86 +427,8 @@ public class PickListService {
     public ResponseEntity<Void> deletePickListByPickListNumber(Long pickListNumber, String bomCode) {
         // Find the picklist by pickListNumber
         PickList pickList = pickListRepository.findByPickListNumber(pickListNumber);
-
-        if (pickList != null) {
-        for (Order order : pickList.getOrders()){    
-            Stock stock = new Stock();
-            Item item = itemSupplierService.getItemBySKUCode(order.getItems().get(0).getSKUCode());
-            if(item.getBoms().size() > 0){
-                stock.setDate(new Date());
-                stock.setSkucode(item.getParentSKU());
-                stock.setSubQty("0");
-                Bom bom = bomService.getBomByBomCode(bomCode);
-                    for (BomItem bomItem : bom.getItemsInBom()){
-                    if (bomItem.getItem().getSKUCode().equals(item.getParentSKU())){
-                        stock.setAddQty(String.valueOf(order.getQty() * Double.parseDouble(bomItem.getQty())));
-                    }
-                    if (!bomItem.getBomItem().equals(item.getParentSKU())){
-                        Stock s = new Stock();
-                        s.setDate(new Date());
-                        s.setSubQty("0");
-                        s.setItem(item);
-                        s.setAddQty(String.valueOf(order.getQty() * Double.parseDouble(bomItem.getQty())));
-                        s.setSkucode(bomItem.getBomItem());
-                        s.setSource("picklist/order");
-                        s.setMessage("pickList deleted for order");
-                        s.setNumber("pickList Number = " + pickList.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
-                        stockService.addStock(s);
-                    }
-                }
-                
-                stock.setItem(order.getItems().get(0));
-    
-                stock.setSource("picklist/order");
-                stock.setMessage("pickList deleted for order");
-                stock.setNumber("pickList Number = " + pickList.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
-                
-            }
-            else {
-                stock.setDate(new Date());
-                stock.setSkucode(order.getItems().get(0).getSKUCode());
-                stock.setSubQty("0");
-                stock.setAddQty(String.valueOf(order.getQty()));
-                stock.setItem(order.getItems().get(0));
         
-                stock.setSource("picklist/order");
-                stock.setMessage("pickList deleted for order");
-                stock.setNumber("pickList Number = " + pickList.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
-            }        
-    
-            stockService.addStock(stock);
-
-            String skuCode = "";
-            double additionalCount = 0;
-    
-            if (order.getItems().get(0).getBoms().size() > 0){
-                skuCode += order.getItems().get(0).getParentSKU();
-                Bom bom = bomService.getBomByBomCode(bomCode);
-                    for(BomItem bomItem : bom.getItemsInBom()){
-                    if (bomItem.getItem().getSKUCode().equals(order.getItems().get(0).getParentSKU())){
-                        additionalCount = Double.parseDouble(String.valueOf(order.getQty())) * Double.parseDouble(bomItem.getQty());
-                    }
-                    else {
-                        Double c = Double.parseDouble(String.valueOf(order.getQty())) * Double.parseDouble(bomItem.getQty());
-                        StockCount sc = stockCountService.getStockCountBySKUCode(bomItem.getBomItem());
-                        sc.setCount(c);
-                        stockCountService.updateStockCount(sc);
-                    }
-                }
-            
-            }
-            else {
-                skuCode += order.getItems().get(0).getSKUCode();
-                additionalCount = Double.parseDouble(String.valueOf(order.getQty()));
-            }
-            StockCount stockCount = stockCountService.getStockCountBySKUCode(skuCode);
-    
-            double currentCount = stockCount.getCount();
-            stockCount.setCount(currentCount + additionalCount);
-    
-            stockCountService.updateStockCount(stockCount);
-        }
-
+        if (pickList != null) {
         // Check if pickList is not null (i.e., picklist exists)
             pickListRepository.delete(pickList);
             return ResponseEntity.noContent().build();

@@ -413,54 +413,54 @@ const handleRefresh = () => {
   };
   
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-        toast.error('Please select an Excel file to upload');
-        return;
-    }
+//   const handleFileUpload = (e) => {
+//     const file = e.target.files[0];
+//     if (!file) {
+//         toast.error('Please select an Excel file to upload');
+//         return;
+//     }
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
+//     const reader = new FileReader();
+//     reader.onload = (evt) => {
+//         const data = new Uint8Array(evt.target.result);
+//         const workbook = XLSX.read(data, { type: 'array' });
+//         const sheetName = workbook.SheetNames[0];
+//         const sheet = workbook.Sheets[sheetName];
+//         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        jsonData.forEach(item => {
-            fetchSupplier(item.supplierName, item.phone)
-                .then(suppliers => {
-                    const formattedData = {
-                        skucode: item.skucode,
-                        description: item.description,
-                        packOf: item.packOf,
-                        parentSKU: item.parentSKU,
-                        group1: item.group1,
-                        group2: item.group2,
-                        group3: item.group3,
-                        sizeRange: item.sizeRange,
-                        size: item.size,
-                        unit: item.unit,
-                        barcode: item.barcode,
-                        sellingPrice: item.sellingPrice,
-                        mrp: item.mrp,
-                        sellerSKUCode: item.sellerSKUCode,
-                        img: item.img,
-                        suppliers: suppliers,
-                        phone:phone
-                    };
-                    postData(formattedData);
-                })
-                .catch(error => {
-                    console.error('Error fetching suppliers:', error);
-                    toast.error('Failed to fetch supplier');
-                });
-        });
-    };
+//         jsonData.forEach(item => {
+//             fetchSupplier(item.supplierName, item.phone)
+//                 .then(suppliers => {
+//                     const formattedData = {
+//                         skucode: item.skucode,
+//                         description: item.description,
+//                         packOf: item.packOf,
+//                         parentSKU: item.parentSKU,
+//                         group1: item.group1,
+//                         group2: item.group2,
+//                         group3: item.group3,
+//                         sizeRange: item.sizeRange,
+//                         size: item.size,
+//                         unit: item.unit,
+//                         barcode: item.barcode,
+//                         sellingPrice: item.sellingPrice,
+//                         mrp: item.mrp,
+//                         sellerSKUCode: item.sellerSKUCode,
+//                         img: item.img,
+//                         suppliers: suppliers,
+//                         phone:phone
+//                     };
+//                     postData(formattedData);
+//                 })
+//                 .catch(error => {
+//                     console.error('Error fetching suppliers:', error);
+//                     toast.error('Failed to fetch supplier');
+//                 });
+//         });
+//     };
 
-    reader.readAsArrayBuffer(file);
-};
+//     reader.readAsArrayBuffer(file);
+// };
 
 const fetchSupplier = async (supplierName, phone) => {
     try {

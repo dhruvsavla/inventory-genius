@@ -674,7 +674,7 @@ const handleDropdownChange = (event, orderNo) => {
     ) : null;
 
     return (
-      <tr key={`${picklist.pickListId}-${index}`}>
+      <tr key={index}>
         {deleteButtonCell}
         {downloadButtonCell}
         {isFirstRowForPickListNumber && <td rowSpan={rowsForPickListNumber}>{picklist.pickListNumber}</td>}

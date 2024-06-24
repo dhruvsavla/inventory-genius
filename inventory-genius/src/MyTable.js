@@ -33,7 +33,7 @@ const MyTable = ({selectedOrderData, generatePicklist, generatePicklistPDF}) => 
       </thead>
       <tbody>
         {groupedData.map((picklist, index) => (
-          <tr key={`${picklist.pickListId}-${index}`}>            
+          <tr key={index}>            
             <td>{picklist.sellerSKU}</td>
             <td>{picklist.qty}</td>
             <td>{picklist.pickQty}</td>  {/* Display accumulated pickQty */}

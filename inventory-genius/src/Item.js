@@ -414,21 +414,21 @@ const handleRefresh = () => {
   
 
   const handleFileUpload = (e) => {
-    console.log("in file upload")
     const file = e.target.files[0];
-    const reader = new FileReader();
+    if (!file) {
+        toast.error('Please select an Excel file to upload');
+        return;
+    }
 
+    const reader = new FileReader();
     reader.onload = (evt) => {
-        const data = evt.target.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        //jsonData.shift();
-
         jsonData.forEach(item => {
-            console.log("in the loop");
             fetchSupplier(item.supplierName, item.phone)
                 .then(suppliers => {
                     const formattedData = {
@@ -447,45 +447,42 @@ const handleRefresh = () => {
                         mrp: item.mrp,
                         sellerSKUCode: item.sellerSKUCode,
                         img: item.img,
-                        suppliers: suppliers // Assign fetched suppliers to the formattedData
+                        suppliers: suppliers,
+                        phone:phone
                     };
-                    console.log("formData =", formattedData);
                     postData(formattedData);
                 })
                 .catch(error => {
                     console.error('Error fetching suppliers:', error);
+                    toast.error('Failed to fetch supplier');
                 });
         });
     };
 
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
 };
 
-const fetchSupplier = (supplierName, phone) => {
-    console.log("in fetch");
-    let fetchedSuppliers = [];
-    return axios.get(`http://localhost:8080/supplier/${supplierName}/${phone}`)
-        .then(response => {
-            const supplier = response.data;
-            console.log('Supplier fetched successfully:', supplier);
-            fetchedSuppliers.push(supplier);
-            return fetchedSuppliers;
-        })
-        .catch(error => {
-            console.error('Error fetching supplier:', error);
-            throw error;
-        });
+const fetchSupplier = async (supplierName, phone) => {
+    try {
+        const response = await axios.get(`http://localhost:8080/supplier/${supplierName}/${phone}`);
+        console.log('Supplier fetched successfully:', response.data);
+        return [response.data]; // Return an array with the supplier
+    } catch (error) {
+        console.error('Error fetching supplier:', error);
+        throw error;
+    }
 };
 
-const postData = (data) => {
-    axios.post('http://localhost:8080/item/supplier', data)
-        .then(response => {
-            console.log('Data posted successfully:', response);
-            setApiData(prevData => [...prevData, response.data]);
-        })
-        .catch(error => {
-            console.error('Error posting data:', error);
-        });
+const postData = async (data) => {
+    try {
+        const response = await axios.post('http://localhost:8080/item/supplier', data);
+        console.log('Data posted successfully:', response);
+        setApiData(prevData => [...prevData, response.data]);
+        toast.success('Item added successfully');
+    } catch (error) {
+        console.error('Error posting data:', error);
+        toast.error('Failed to add item');
+    }
 };
 
 
@@ -830,7 +827,7 @@ const postData = (data) => {
         <Button type="submit" onClick={handleSubmit}>Submit</Button>
       )}
       <span style={{ margin: '0 10px' }}>or</span>
-            <input type="file" onChange={handleFileUpload} />
+            <input type="file" accept='.xlsx, .xls' onChange={handleFileUpload} />
             <span style={{margin: "auto"}}></span>
             <Button
               variant="contained"

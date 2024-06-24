@@ -94,7 +94,7 @@ public class Item {
     // @JoinColumn(name = "supplier_id")
     // private Supplier supplier;
 
-    @ManyToMany(mappedBy = "items", fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "items")
     @JsonIgnore
     private List<Storage> storages = new ArrayList<>();
 

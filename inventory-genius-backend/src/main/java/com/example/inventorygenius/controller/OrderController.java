@@ -18,15 +18,11 @@ import com.example.inventorygenius.service.StockCountService;
 import com.example.inventorygenius.service.StockService;
 import com.example.inventorygenius.service.PickListService;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PathVariable;
 
 
 
@@ -103,7 +99,7 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
             }
 
             if (item != null && item.getBoms().size() > 0) {
-                stock.setDate(new Date());
+                stock.setDate(LocalDate.now());
                 stock.setSkucode(item.getParentSKU());
                 stock.setSubQty("0");
 
@@ -113,7 +109,7 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
                             stock.setAddQty(String.valueOf(updatedOrder.getQty() * Double.parseDouble(bomItem.getQty())));
                         } else {
                             Stock s = new Stock();
-                            s.setDate(new Date());
+                            stock.setDate(LocalDate.now());
                             s.setSubQty("0");
                             s.setItem(item);
                             s.setAddQty(String.valueOf(updatedOrder.getQty() * Double.parseDouble(bomItem.getQty())));
@@ -133,7 +129,7 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
                 stock.setMessage("Order Cancelled");
                 stock.setNumber("Order Number = " + String.valueOf(updatedOrder.getOrderNo()));
             } else {
-                stock.setDate(new Date());
+                stock.setDate(LocalDate.now());
                 stock.setSkucode(updatedOrder.getItems().get(0).getSKUCode());
                 stock.setSubQty("0");
                 stock.setAddQty(String.valueOf(updatedOrder.getQty()));
@@ -181,7 +177,7 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
             }
 
             if (item != null && item.getBoms().size() > 0) {
-                stock.setDate(new Date());
+                stock.setDate(LocalDate.now());
                 stock.setSkucode(item.getParentSKU());
                 stock.setAddQty("0");
 
@@ -191,7 +187,7 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
                             stock.setSubQty(String.valueOf(updatedOrder.getQty() * Double.parseDouble(bomItem.getQty())));
                         } else {
                             Stock s = new Stock();
-                            s.setDate(new Date());
+                            s.setDate(LocalDate.now());
                             s.setAddQty("0");
                             s.setItem(item);
                             s.setSubQty(String.valueOf(updatedOrder.getQty() * Double.parseDouble(bomItem.getQty())));
@@ -211,7 +207,7 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
                 stock.setMessage("Order Not Cancelled");
                 stock.setNumber("Order Number = " + String.valueOf(updatedOrder.getOrderNo()));
             } else {
-                stock.setDate(new Date());
+                stock.setDate(LocalDate.now());
                 stock.setSkucode(updatedOrder.getItems().get(0).getSKUCode());
                 stock.setAddQty("0");
                 stock.setSubQty(String.valueOf(updatedOrder.getQty()));

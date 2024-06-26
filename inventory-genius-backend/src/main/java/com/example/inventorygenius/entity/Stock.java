@@ -1,5 +1,6 @@
 package com.example.inventorygenius.entity;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class Stock {
     private Long stockId;
 
     @Column(name = "date")
-    private Date date;
+    private LocalDate date;
 
     @Column(name = "skucode")
     private String skucode;
@@ -59,7 +60,7 @@ public class Stock {
 
     }
 
-    public Stock(Long stockId, Date date, String skucode, String addQty, String subQty, String source, String message, String number) {
+    public Stock(Long stockId, LocalDate date, String skucode, String addQty, String subQty, String source, String message, String number) {
         this.stockId = stockId;
         this.date = date;
         this.skucode = skucode;
@@ -78,11 +79,11 @@ public class Stock {
         this.stockId = stockId;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 

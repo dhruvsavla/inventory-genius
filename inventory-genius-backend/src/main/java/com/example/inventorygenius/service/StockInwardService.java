@@ -16,6 +16,7 @@ import com.example.inventorygenius.repository.StockInwardRepository;
 import com.example.inventorygenius.repository.StockRepository;
 import com.example.inventorygenius.repository.StorageRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -72,7 +73,7 @@ public class StockInwardService {
 
         // Create a new Stock object
         Stock stock = new Stock();
-        stock.setDate(SI.getDate());
+        stock.setDate(LocalDate.now());
         stock.setSkucode(SI.getItem().getSKUCode());
         stock.setAddQty("0");
         stock.setSubQty(SI.getQty());

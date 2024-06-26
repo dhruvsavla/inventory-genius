@@ -20,6 +20,7 @@ import com.example.inventorygenius.service.BomService;
 import com.example.inventorygenius.service.StockService;
 import com.example.inventorygenius.service.StockCountService;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -81,7 +82,7 @@ public class PickListDataService {
                 Stock stock = new Stock();
                 stock.setItem(itemP);
                 stock.setSkucode(itemP.getSKUCode());
-                stock.setDate(new Date());
+                stock.setDate(LocalDate.now());
                 stock.setAddQty("0");
                 stock.setSubQty(String.valueOf(pickListData.getPickQty()));
                 stock.setSource("picklist/order");
@@ -138,7 +139,7 @@ public class PickListDataService {
                 Stock stock = new Stock();
                 stock.setItem(itemP);
                 stock.setSkucode(itemP.getSKUCode());
-                stock.setDate(new Date());
+                stock.setDate(LocalDate.now());
                 stock.setAddQty(String.valueOf(p.getPickQty()));
                 stock.setSubQty("0");
                 stock.setSource("picklist/order");

@@ -15,6 +15,7 @@ import com.example.inventorygenius.service.StockCountService;
 import com.example.inventorygenius.service.StockInwardService;
 import com.example.inventorygenius.service.StockService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -47,7 +48,7 @@ public class StockInwardController {
         String number = String.valueOf(stockInwardId);
 
         Stock stock = new Stock();
-        stock.setDate(stockInward.getDate());
+        stock.setDate(LocalDate.now());
         stock.setSkucode(stockInward.getSkucode());
         stock.setAddQty(stockInward.getQty());
         stock.setSubQty("0");
@@ -119,7 +120,7 @@ public class StockInwardController {
 
         System.out.println(stock.getMessage());
 
-        stock.setDate(updatedStockInward.getDate());
+        
         stock.setSkucode(updatedStockInward.getSkucode());
         stock.setAddQty(updatedStockInward.getQty());
 

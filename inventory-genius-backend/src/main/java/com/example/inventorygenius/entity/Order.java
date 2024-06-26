@@ -1,5 +1,6 @@
 package com.example.inventorygenius.entity;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,7 +32,7 @@ public class Order {
     private Long orderId;
 
     @Column(name = "Date")
-    private Date Date;
+    private LocalDate Date;
 
     @Column(name = "order_no")
     private String orderNo;
@@ -58,7 +59,7 @@ public class Order {
     private double qty;
 
     @Column(name = "ship_by_date")
-    private Date shipByDate;
+    private LocalDate shipByDate;
 
     @Column(name = "dispatched")
     private String dispatched;
@@ -101,8 +102,8 @@ public class Order {
 
     }
 
-    public Order(Long orderId, Date Date, String orderNo, String portal, String portalOrderNo, String portalOrderLineId,
-            String portalSKU, String sellerSKU, String productDescription, double qty, Date shipByDate, String dispatched,
+    public Order(Long orderId, LocalDate Date, String orderNo, String portal, String portalOrderNo, String portalOrderLineId,
+            String portalSKU, String sellerSKU, String productDescription, double qty, LocalDate shipByDate, String dispatched,
             String courier, String cancel, String awbNo, String orderStatus) {
         this.orderId = orderId;
         this.orderNo = orderNo;
@@ -210,11 +211,11 @@ public class Order {
         this.qty = qty;
     }
 
-    public Date getShipByDate() {
+    public LocalDate getShipByDate() {
         return shipByDate;
     }
 
-    public void setShipByDate(Date shipByDate) {
+    public void setShipByDate(LocalDate shipByDate) {
         this.shipByDate = shipByDate;
     }
 
@@ -222,11 +223,11 @@ public class Order {
         return dispatched;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return Date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         Date = date;
     }
 

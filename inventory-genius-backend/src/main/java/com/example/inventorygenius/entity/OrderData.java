@@ -1,9 +1,10 @@
 package com.example.inventorygenius.entity;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 public class OrderData {
-    private Date date;
+    private LocalDate date;
     private String orderNo;
     private String portal;
     private String sellerSKU;
@@ -15,10 +16,10 @@ public class OrderData {
     private String img;
     private String bomCode;
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
     public String getOrderNo() {

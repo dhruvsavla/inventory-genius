@@ -9,10 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
-
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "picklist_data")
@@ -26,9 +23,8 @@ public class PickListData {
     @Column(name = "pick_list_number")
     private Long pickListNumber;
 
-    @Temporal(TemporalType.DATE)
     @Column(name = "date")
-    private Date date;
+    private LocalDate date;
 
     @Column(name = "portal_order_no")
     private String portalOrderNo;
@@ -73,12 +69,11 @@ public class PickListData {
     private Item item;
 
     public PickListData() {
-
     }
-    
-    public PickListData(Long pickListId, Long pickListNumber, Date date, String portalOrderNo, String orderNo,
-            String bomCode, String portal, String sellerSKU, Double qty, String description, String binNumber,
-            String rackNumber, Double pickQty) {
+
+    public PickListData(Long pickListId, Long pickListNumber, LocalDate date, String portalOrderNo, String orderNo,
+                        String bomCode, String portal, String sellerSKU, Double qty, String description, String binNumber,
+                        String rackNumber, Double pickQty) {
         this.pickListId = pickListId;
         this.pickListNumber = pickListNumber;
         this.date = date;
@@ -110,11 +105,11 @@ public class PickListData {
         this.pickListNumber = pickListNumber;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 
@@ -221,5 +216,4 @@ public class PickListData {
     public void setItem(Item item) {
         this.item = item;
     }
-
 }

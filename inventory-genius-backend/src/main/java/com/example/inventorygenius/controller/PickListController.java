@@ -226,7 +226,7 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
                 String sellerSKU = p.getItem().getSellerSKUCode();
                 double qty = p.getQty();
                 double pickQty = p.getPickQty();
-                Date date = p.getDate();
+                LocalDate date = p.getDate();
                 String description = p.getItem().getDescription();
                 String bin = p.getStorage().getBinNumber();
                 String rack = p.getStorage().getRackNumber();

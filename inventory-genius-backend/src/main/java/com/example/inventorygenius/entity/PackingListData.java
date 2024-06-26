@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -25,9 +26,8 @@ public class PackingListData {
     @Column(name = "pack_list_number")
     private Long packListNumber;
 
-    @Temporal(TemporalType.DATE)
     @Column(name = "date")
-    private Date date;
+    private LocalDate date;
 
     @Column(name = "portal_order_no")
     private String portalOrderNo;
@@ -65,7 +65,7 @@ public class PackingListData {
         
     }
 
-    public PackingListData(Long packListId, Long packListNumber, Date date, String portalOrderNo, String orderNo,
+    public PackingListData(Long packListId, Long packListNumber, LocalDate date, String portalOrderNo, String orderNo,
             String bomCode, String portal, String sellerSKU, Double qty, String description, Double packQty) {
         this.packListId = packListId;
         this.packListNumber = packListNumber;
@@ -96,11 +96,11 @@ public class PackingListData {
         this.packListNumber = packListNumber;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 

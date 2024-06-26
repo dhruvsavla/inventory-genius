@@ -176,7 +176,7 @@ const PicklistComponent = () => {
     // Map the selected order data to the desired format
 const selectedOrder = selectedOrderData[0].map(order => ({
   packListNumber: packingListNumber,
-  date: order.date,
+  date: new Date(),
   portalOrderNo: order.portalOrderNo,
   orderNo: order.orderNo,
   bomCode: order.bomCode,

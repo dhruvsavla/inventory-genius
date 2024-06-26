@@ -60,41 +60,53 @@ public class PickListDataService {
     // Add new picklist data
     @Transactional
     public PickListData addPickListData(PickListData pickListData) {
+        // Find associated order
         List<Order> orders = orderService.findByOrderNo(pickListData.getOrderNo());
-        for(Order o : orders){
+        for (Order o : orders) {
             pickListData.setOrder(o);
             break;
         }
+
+        // Find item and storage
         Item itemP = itemSupplierService.findItemsBySellerSKUAndDescription(pickListData.getSellerSKU(), pickListData.getDescription());
-        System.out.println("picklist item sku = " + itemP);
         Storage storage = storageService.getStorageByBinAndRack(pickListData.getBinNumber(), pickListData.getRackNumber(), itemP.getSKUCode());
-        //System.out.println("picklist storage sku = " + storage.getS());
+
+        // Set item and storage in pickListData
         pickListData.setStorage(storage);
         pickListData.setItem(itemP);
 
+        // Update stock for each order
+        for (Order order : orders) {
+                // Create a new Stock entry for each pickListData
+                Stock stock = new Stock();
+                stock.setItem(itemP);
+                stock.setSkucode(itemP.getSKUCode());
+                stock.setDate(new Date());
+                stock.setAddQty("0");
+                stock.setSubQty(String.valueOf(pickListData.getPickQty()));
+                stock.setSource("picklist/order");
+                stock.setMessage("pickList generated for order");
+                stock.setNumber("pickList Number = " + pickListData.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
 
-        List<Order> orderList = orderService.findByOrderNo(pickListData.getOrder().getOrderNo());
-        for (Order order : orderList){
-            Stock stock = new Stock();
-            stock.setItem(itemP);
-            stock.setSkucode(itemP.getSKUCode());
-            stock.setDate(new Date());
-            stock.setAddQty("0");
-            stock.setSubQty(String.valueOf(pickListData.getPickQty()));
-            stock.setSource("picklist/order");
-            stock.setMessage("pickList generated for order");
-            stock.setNumber("pickList Number = " + pickListData.getPickListNumber() + " order no = " + String.valueOf(order.getOrderNo()));
+                stockService.addStock(stock);
+            
 
-            stockService.addStock(stock);
+            // Debugging statements
+            changeStockCount(itemP, pickListData.getPickQty());
 
-            StockCount stockCount = stockCountService.getStockCountBySKUCode(itemP.getSKUCode());
-            Double prevCount = stockCount.getCount();
-            stockCount.setCount(prevCount - pickListData.getPickQty());
-            stockCountService.updateStockCount(stockCount);
-    }
+        }
 
+        // Save pickListData and return
         return pickListDataRepository.save(pickListData);
     }
+
+    public void changeStockCount(Item i, Double qty){
+        StockCount s = stockCountService.getStockCountBySKUCode(i.getSKUCode());
+                Double prevCount = s.getCount();
+                s.setCount(prevCount - qty);
+                stockCountService.updateStockCount(s);
+    }
+
 
     // Update picklist data
     public PickListData updatePickListData(Long pickListId, PickListData pickListData) {

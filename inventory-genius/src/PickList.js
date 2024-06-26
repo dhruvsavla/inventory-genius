@@ -147,55 +147,59 @@ const PicklistComponent = () => {
 
   const handleCheckboxChange = async (event, orderNo, bomCode) => {
     console.log("in handle");
-  
+
     if (orderNo === undefined) {
-      // "Select All" checkbox logic
-      const allOrderNos = orders.map(order => order.orderNo);
-      const updatedSelectedRows = event.target.checked ? allOrderNos : [];
-      setSelectedRows(updatedSelectedRows);
-  
-      if (event.target.checked) {
-        
-        const promises = orders.map(order =>
-          
-          axios.get(`http://localhost:8080/picklists/getSelectedOrderData?orderNo=${order.orderNo}&bomCode=${bomCodes[order.orderNo]}`)
-          .then (response => {
-            console.log("selected bomCode = " + bomCodes[order.orderNo]);
-      })
-        );
-  
-        Promise.all(promises)
-          .then(results => {
-            const orderData = results.reduce((acc, response) => [...acc, ...response.data], []);
-            setSelectedOrderData(orderData);
-          })
-          .catch(error => {
-            console.error('Error fetching order data:', error);
-          });
-      } else {
-        setSelectedOrderData([]);
-      }
-    } else {
-      // Individual checkbox logic
-      const updatedSelectedRows = event.target.checked
-        ? [...selectedRows, orderNo]
-        : selectedRows.filter(row => row !== orderNo);
-  
-      setSelectedRows(updatedSelectedRows);
-  
-      if (event.target.checked) {
-        try {
-          const orderDataResponse = await axios.get(`http://localhost:8080/picklists/getSelectedOrderData?orderNo=${orderNo}&bomCode=${bomCode}`);
-          const orderData = orderDataResponse.data;
-          setSelectedOrderData(prevData => [...prevData, ...orderData]);
-        } catch (error) {
-          console.error('Error fetching BOM or order data:', error);
+        // "Select All" checkbox logic
+        const allOrderNos = orders.map(order => order.orderNo);
+        const updatedSelectedRows = event.target.checked ? allOrderNos : [];
+        setSelectedRows(updatedSelectedRows);
+
+        if (event.target.checked) {
+            const promises = orders.map(order => 
+                axios.get(`http://localhost:8080/picklists/getSelectedOrderData?orderNo=${order.orderNo}&bomCode=${bomCodes[order.orderNo]}`)
+                    .then(response => {
+                        console.log("selected bomCode = " + bomCodes[order.orderNo]);
+                        return response.data; // Return data on success
+                    })
+                    .catch(error => {
+                        console.error(`Error fetching data for orderNo ${order.orderNo}:`, error);
+                        return []; // Return empty array on failure
+                    })
+            );
+
+            Promise.all(promises)
+                .then(results => {
+                    const orderData = results.reduce((acc, data) => [...acc, ...data], []);
+                    setSelectedOrderData(orderData);
+                })
+                .catch(error => {
+                    console.error('Error fetching order data:', error);
+                });
+        } else {
+            setSelectedOrderData([]);
         }
-      } else {
-        setSelectedOrderData(prevData => prevData.filter(order => order.orderNo !== orderNo));
-      }
+    } else {
+        // Individual checkbox logic
+        const updatedSelectedRows = event.target.checked
+            ? [...selectedRows, orderNo]
+            : selectedRows.filter(row => row !== orderNo);
+
+        setSelectedRows(updatedSelectedRows);
+
+        if (event.target.checked) {
+            try {
+                const orderDataResponse = await axios.get(`http://localhost:8080/picklists/getSelectedOrderData?orderNo=${orderNo}&bomCode=${bomCode}`);
+                const orderData = orderDataResponse.data;
+                setSelectedOrderData(prevData => [...prevData, ...orderData]);
+            } catch (error) {
+                console.error('Error fetching BOM or order data:', error);
+            }
+        } else {
+            setSelectedOrderData(prevData => prevData.filter(order => order.orderNo !== orderNo));
+        }
     }
-  };
+};
+
   
   
   const generatePicklist = () => {
@@ -228,7 +232,7 @@ const generatePicklistWithNumber = async (pickListNumber) => {
         await Promise.all(selectedOrderData.map(async s => {
             const selectedOrder = {
                 pickListNumber: pickListNumber,
-                date: s.date,
+                date: new Date(),
                 portalOrderNo: s.portalOrderNo,
                 orderNo: s.orderNo,
                 bomCode: s.bomCode,

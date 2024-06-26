@@ -134,7 +134,6 @@ public class PickListService {
     public List<OrderData> getOrderData(Bom bom) {
         List<Order> orders = orderService.getAllOrders(); // Get orders from service/repository
         List<OrderData> orderDataList = new ArrayList<>(); // List to hold order data
-        int totalQty = 0;
 
         for (Order order : orders) {
             Boolean generatedOrder = generated(order);
@@ -151,7 +150,7 @@ public class PickListService {
                                 o.setSellerSKU(i.getSellerSKUCode());
                                 o.setImg(i.getImg());
                                 o.setBomCode(bom.getBomCode());
-                                totalQty += order.getQty() * Double.parseDouble(bomItem.getQty());
+                                double totalQty = order.getQty() * Double.parseDouble(bomItem.getQty());
                                 o.setPickQty(order.getQty() * Double.parseDouble(bomItem.getQty()));
                                 if (getBestStorage(i, totalQty).size() > 0){
                                     String bin = "";
@@ -170,12 +169,12 @@ public class PickListService {
                             
                                 o.setQty(order.getQty());
                                 o.setDescription(i.getDescription());
+                                System.out.println("total qty for " + i.getSKUCode() + "= " + totalQty);
                                 orderDataList.add(o);
                                 //totalQty = 0;
                            } 
                         }                    
                     
-                        totalQty = 0;
                     }
 
                 }
@@ -188,7 +187,6 @@ public class PickListService {
     public List<OrderData> getOrderDatas() {
         List<Order> orders = orderService.getAllOrders(); // Get orders from service/repository
         List<OrderData> orderDataList = new ArrayList<>(); // List to hold order data
-        int totalQty = 0;
 
         for (Order order : orders) {
             order = orderService.findById(order.getOrderId()); // Update the order object
@@ -208,7 +206,7 @@ public class PickListService {
                         orderData.setImg(item.getImg());
                         orderData.setPickQty((order.getQty()));
                         orderData.setSellerSKU(item.getSellerSKUCode());
-                        totalQty += order.getQty();
+                        Double totalQty = order.getQty();
 
                         if (getBestStorage(item, totalQty).size() > 0){
                             String bin = "";
@@ -227,7 +225,6 @@ public class PickListService {
                         
                         orderData.setQty(order.getQty());
                         orderDataList.add(orderData);
-                            totalQty = 0;
                                 
                     }    
                 }
@@ -237,7 +234,7 @@ public class PickListService {
         return orderDataList;
     }
 
-    public List<Storage> getBestStorage (Item item, int totalQty){
+    public List<Storage> getBestStorage (Item item, Double totalQty){
         List<Storage> storages = item.getStorages();
         List<Storage> storageList = new ArrayList<>();
         for (Storage s : storages){
@@ -245,9 +242,7 @@ public class PickListService {
                 storageList.add(s);
                 break;
             }
-            else{
-                storageList.add(s);
-            }
+            
         }
         return storageList;
     }

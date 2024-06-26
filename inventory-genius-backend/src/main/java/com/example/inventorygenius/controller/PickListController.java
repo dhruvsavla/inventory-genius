@@ -30,6 +30,7 @@ import com.example.inventorygenius.repository.PickListRepository;
 import com.example.inventorygenius.service.BomService;
 import com.example.inventorygenius.service.ItemSupplierService;
 import com.example.inventorygenius.service.OrderService;
+import com.example.inventorygenius.service.PickListDataService;
 import com.example.inventorygenius.service.PickListService;
 import com.example.inventorygenius.service.StockCountService;
 import com.example.inventorygenius.service.StockService;
@@ -72,6 +73,9 @@ public class PickListController {
 
     @Autowired 
     private StorageService storageService;
+
+    @Autowired 
+    private PickListDataService pickListDataService;
 
     @GetMapping("/not/generated/orders")
     public List<Order> getNotGeneratedOrders() {
@@ -199,7 +203,7 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
 
     @GetMapping("/merged/picklist")
     public List<PickListData> mergedPickListDatas() {
-        List<PickListData> allPickListDatas = getData();
+        List<PickListData> allPickListDatas = pickListDataService.getAllPickListData();
         List<PickListData> mergedPickListData = new ArrayList<>();
     
         // Map to store PickListData grouped by picklistNumber
@@ -222,7 +226,7 @@ public ResponseEntity<PickList> createPickList(@RequestBody PickList pickList) {
                 String sellerSKU = p.getItem().getSellerSKUCode();
                 double qty = p.getQty();
                 double pickQty = p.getPickQty();
-                Date date = new Date();
+                Date date = p.getDate();
                 String description = p.getItem().getDescription();
                 String bin = p.getStorage().getBinNumber();
                 String rack = p.getStorage().getRackNumber();

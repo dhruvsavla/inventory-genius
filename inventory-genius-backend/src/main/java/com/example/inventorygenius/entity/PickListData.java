@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 
 import java.util.Date;
 
@@ -24,6 +26,7 @@ public class PickListData {
     @Column(name = "pick_list_number")
     private Long pickListNumber;
 
+    @Temporal(TemporalType.DATE)
     @Column(name = "date")
     private Date date;
 

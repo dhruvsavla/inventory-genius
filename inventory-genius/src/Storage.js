@@ -111,57 +111,68 @@ function Storage() {
 
 
 const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
+  const file = e.target.files[0];
+  const reader = new FileReader();
 
-    reader.onload = (evt) => {
-        const data = evt.target.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
+  reader.onload = (evt) => {
+      const data = evt.target.result;
+      const workbook = XLSX.read(data, { type: 'binary' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        jsonData.forEach(item => {
-            const formattedData = {
-                binNumber: item.binNumber,
-                rackNumber: item.rackNumber,
-                skucode: item.skucode,
-                qty: item.qty
-            };
+      jsonData.forEach(item => {
+          const formattedData = {
+              binNumber: item.binNumber,
+              rackNumber: item.rackNumber,
+              skucode: item.skucode,
+              qty: item.qty
+          };
 
-            // Fetch item details using skucode
-            axios.get(`http://localhost:8080/item/supplier/search/skucode/${item.skucode}`)
-                .then(response => {
-                    // Check if item exists
-                    if (!response.data || response.data.length === 0) {
-                        console.error('Item not found with SKU code: ' + item.skucode);
-                        return;
-                    }
+          // Fetch item details using skucode
+          axios.get(`http://localhost:8080/item/supplier/search/skucode/${item.skucode}`)
+              .then(response => {
+                  // Check if item exists
+                  if (!response.data || response.data.length === 0) {
+                      console.error('Item not found with SKU code: ' + item.skucode);
+                      return;
+                  }
 
-                    console.log("found item with skucode: " + item.skucode);
+                  console.log("found item with skucode: " + item.skucode);
 
-                    // Extract item from response data
-                    const fetchedItem = response.data;
+                  // Extract item from response data
+                  const fetchedItem = response.data;
 
-                    // Construct formData with fetched item
-                    const formData = {
-                        ...formattedData,
-                        item: fetchedItem // Make sure fetchedItem is correctly assigned
-                    };
+                  // Construct formData with fetched item in the items list
+                  const formData = {
+                      ...formattedData,
+                      items: [fetchedItem] // Add the fetched item to an items array
+                  };
 
-                    console.log('Form data:', formData);
+                  console.log('Form data:', formData);
 
-                    // Send data to server
-                    postData(formData);
-                })
-                .catch(error => {
-                    console.error('Error fetching item:', error);
-                });
-        });
-    };
+                  // Send data to server
+                  axios.post('http://localhost:8080/your-endpoint', formData)
+                      .then(response => {
+                          console.log('POST request successful:', response);
+                          toast.success('Data imported successfully', {
+                              autoClose: 2000 // Close after 2 seconds
+                          });
+                      })
+                      .catch(error => {
+                          console.error('Error sending POST request:', error);
+                          toast.error('Failed to import data: ' + (error.response?.data?.message || error.message));
+                      });
+              })
+              .catch(error => {
+                  console.error('Error fetching item:', error);
+              });
+      });
+  };
 
-    reader.readAsBinaryString(file);
+  reader.readAsBinaryString(file);
 };
+
 
 const handleSubmit = (event) => {
   event.preventDefault();

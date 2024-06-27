@@ -363,6 +363,9 @@ const updateCount = () => {
   axios.get('http://localhost:8080/stock/update-counts')
     .then(reponse => {
       console.log("stock count updated successfully");
+      toast.success('Stock Count updated successfully', {
+        autoClose: 2000 // Close after 2 seconds
+      });
     })
     .catch(error => {
       console.log(error);

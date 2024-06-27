@@ -415,52 +415,70 @@ const handleRefresh = () => {
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (!file) {
-        toast.error('Please select an Excel file to upload');
-        return;
-    }
-
     const reader = new FileReader();
-    reader.onload = (evt) => {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        jsonData.forEach(item => {
-            fetchSupplier(item.supplierName, item.phone)
-                .then(suppliers => {
-                    const formattedData = {
-                        skucode: item.skucode,
-                        description: item.description,
-                        packOf: item.packOf,
-                        parentSKU: item.parentSKU,
-                        group1: item.group1,
-                        group2: item.group2,
-                        group3: item.group3,
-                        sizeRange: item.sizeRange,
-                        size: item.size,
-                        unit: item.unit,
-                        barcode: item.barcode,
-                        sellingPrice: item.sellingPrice,
-                        mrp: item.mrp,
-                        sellerSKUCode: item.sellerSKUCode,
-                        img: item.img,
-                        suppliers: suppliers,
-                      
-                    };
-                    postData(formattedData);
-                })
-                .catch(error => {
-                    console.error('Error fetching suppliers:', error);
-                    toast.error('Failed to fetch supplier');
+    reader.onload = (evt) => {
+      const data = evt.target.result;
+      const workbook = XLSX.read(data, { type: 'binary' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+      jsonData.forEach(item => {
+        let formData = {
+          skucode: item.skucode,
+          description: item.description,
+          packOf: item.packOf,
+          parentSKU: item.parentSKU,
+          group1: item.group1,
+          group2: item.group2,
+          group3: item.group3,
+          sizeRange: item.sizeRange,
+          size: item.size,
+          unit: item.unit,
+          barcode: item.barcode,
+          sellingPrice: item.sellingPrice,
+          mrp: item.mrp,
+          sellerSKUCode: item.sellerSKUCode,
+          img: item.img,
+        };
+
+        // Fetch supplier based on supplier name
+        axios.get(`http://localhost:8080/suppliers/search/name/${item.supplierName}`)
+          .then(response => {
+            if (response.data.length === 0) {
+              toast.error('Supplier not found with name: ' + item.supplierName);
+              return;
+            }
+
+            // Add suppliers to formData
+            formData.suppliers = [response.data];
+
+            // Post formData
+            axios.post('http://localhost:8080/item/supplier', formData)
+              .then(response => {
+                console.log('POST request successful:', response);
+                toast.success('Item added successfully', {
+                  autoClose: 2000 // Close after 2 seconds
                 });
-        });
+
+                // Update the state with the new API data
+                setApiData(prevApiData => [...prevApiData, response.data]);
+              })
+              .catch(error => {
+                console.error('Error sending POST request:', error);
+                toast.error('Failed to add item: ' + (error.response?.data?.message || error.message));
+              });
+          })
+          .catch(error => {
+            console.error('Error fetching supplier:', error);
+            toast.error('Failed to fetch supplier: ' + (error.response?.data?.message || error.message));
+          });
+      });
     };
 
-    reader.readAsArrayBuffer(file);
-};
+    reader.readAsBinaryString(file);
+  };
 
 const fetchSupplier = async (supplierName, phone) => {
     try {
@@ -853,6 +871,7 @@ const postData = async (data) => {
       </AccordionSummary>
           <AccordionDetails>
         {apiData && (
+          
   <div style={{ overflowX: 'auto' }}> 
       <Table striped bordered hover className='custom-table'>
         <thead>

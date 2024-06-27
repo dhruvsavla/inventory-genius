@@ -10,6 +10,7 @@ import com.example.inventorygenius.entity.Storage;
 import com.example.inventorygenius.service.StockService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/stock")
@@ -42,4 +43,8 @@ public class StockController {
         return new ResponseEntity<>(updatedStorage, HttpStatus.OK);
     }
 
+    @GetMapping("/update-counts")
+    public Map<String, Double> updateStockCounts() {
+        return stockService.printGroupedStocksAndCalculateCounts();
+    }
 }

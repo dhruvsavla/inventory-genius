@@ -97,7 +97,20 @@ function Storage() {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
 
-  const handleFileUpload = (e) => {
+  const postData = (data) => {
+    axios.post('http://localhost:8080/storage', data)
+        .then(response => {
+            // Handle successful response
+            console.log('Data posted successfully:', response);
+        })
+        .catch(error => {
+            // Handle error
+            console.error('Error posting data:', error);
+        });
+};
+
+
+const handleFileUpload = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
 
@@ -108,17 +121,42 @@ function Storage() {
         const sheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        jsonData.shift();
-
         jsonData.forEach(item => {
             const formattedData = {
-                bin: item.binNumber,
-                rack: item.rackNumber,
-                skucde: item.skucode,
+                binNumber: item.binNumber,
+                rackNumber: item.rackNumber,
+                skucode: item.skucode,
                 qty: item.qty
             };
-          console.log(formattedData)
-            postData(formattedData);
+
+            // Fetch item details using skucode
+            axios.get(`http://localhost:8080/item/supplier/search/skucode/${item.skucode}`)
+                .then(response => {
+                    // Check if item exists
+                    if (!response.data || response.data.length === 0) {
+                        console.error('Item not found with SKU code: ' + item.skucode);
+                        return;
+                    }
+
+                    console.log("found item with skucode: " + item.skucode);
+
+                    // Extract item from response data
+                    const fetchedItem = response.data;
+
+                    // Construct formData with fetched item
+                    const formData = {
+                        ...formattedData,
+                        item: fetchedItem // Make sure fetchedItem is correctly assigned
+                    };
+
+                    console.log('Form data:', formData);
+
+                    // Send data to server
+                    postData(formData);
+                })
+                .catch(error => {
+                    console.error('Error fetching item:', error);
+                });
         });
     };
 
@@ -245,17 +283,6 @@ useEffect(() => {
 
 }, []);
 
-const postData = (data) => {
-    axios.post('http://localhost:8080/storage', data)
-        .then(response => {
-            // Handle successful response
-            console.log('Data posted successfully:', response);
-        })
-        .catch(error => {
-            // Handle error
-            console.error('Error posting data:', error);
-        });
-};
 
 const downloadTemplate = () => {
   const templateData = [
@@ -513,9 +540,9 @@ const exportToExcel = () => {
           <DeleteIcon style={{ color: '#F00' }} />
         </button>
       </td>
-      <td>{storage.rackNumber}</td>
-      <td>{storage.binNumber}</td>
-      <td>{storage.items[0].skucode}</td>
+      <td>{storage.rackNumber !== null ? storage.rackNumber : ''}</td>
+      <td>{storage.binNumber !== null ? storage.binNumber : ''}</td>
+      <td>{storage.skucode !== null ? storage.skucode: ''}</td>
       <td>{storage.qty !== null ? storage.qty : ''}</td> {/* Conditionally render qty */}
     </tr>
   ))}

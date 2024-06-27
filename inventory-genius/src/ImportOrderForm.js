@@ -211,29 +211,96 @@ function ImportOrderForm() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
-
+  
     reader.onload = (evt) => {
-        const data = evt.target.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(sheet);
-
-        jsonData.shift();
-
-        jsonData.forEach(item => {
-            const formattedData = {
-                // bin: item.binNumber,
-                // rack: item.rackNumber,
-                // skucde: item.skucode
-            };
-          console.log(formattedData)
-            postData(formattedData);
-        });
+      const data = evt.target.result;
+      const workbook = XLSX.read(data, { type: 'binary' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet);
+  
+      jsonData.forEach(item => {
+        const formattedData = {
+          date: formatDateString(item.date),
+          orderNo: item.orderNo,
+          portalOrderNo: item.portalOrderNo,
+          portalOrderLineId: item.portalOrderLineId,
+          portalSKU: item.portalSKU,
+          productDescription: item.productDescription,
+          shipByDate: formatDateString(item.shipByDate),
+          dispatched: item.dispatched,
+          courier: item.courier,
+          portal: item.portal,
+          sellerSKU: item.sellerSKU,
+          qty: item.qty,
+          cancel: item.cancel,
+          awbNo: item.awbNo,
+          orderStatus: item.orderStatus || "Order Received"
+        };
+  
+        // Fetch item based on supplier and supplier SKU code
+        axios.get(`http://localhost:8080/item/supplier/order/search/${item.sellerSKU}/${item.productDescription}`)
+          .then(response => {
+            if (response.data) {
+              const itemsArray = [response.data]; // Store item data in an array
+  
+              // Fetch item portal mapping details
+              axios.get('http://localhost:8080/itemportalmapping/Portal/PortalSku/SellerSku', {
+                params: {
+                  portal: item.portal,
+                  portalSKU: item.portalSKU,
+                  sellerSKU: item.sellerSKU,
+                },
+              })
+                .then(res => {
+                  const ipm = res.data;
+  
+                  // Form the data to be sent in the POST request
+                  const formData = {
+                    ...formattedData,
+                    items: itemsArray,
+                    itemPortalMapping: ipm,
+                  };
+  
+                  // Send the POST request
+                  axios.post('http://localhost:8080/orders', formData)
+                    .then(response => {
+                      console.log('POST request successful:', response);
+                      toast.success('Order added successfully', {
+                        autoClose: 2000 // Close after 2 seconds
+                      });
+  
+                      // Update the state with the new API data
+                      setApiData([...apiData, response.data]);
+                    })
+                    .catch(error => {
+                      console.error('Error sending POST request:', error);
+                      toast.error('Failed to add Order: ' + error.response?.data?.message || error.message);
+                    });
+                })
+                .catch(error => {
+                  console.error('Error fetching item portal mapping:', error);
+                  toast.error('Failed to fetch item portal mapping: ' + error.response?.data?.message || error.message);
+                });
+            } else {
+              console.error('No item found for the specified supplier and supplier SKU code.');
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching item:', error);
+            toast.error('Failed to fetch item: ' + error.response?.data?.message || error.message);
+          });
+      });
     };
-
+  
     reader.readAsBinaryString(file);
-};
+  };
+  
+  const formatDateString = (dateString) => {
+    const [day, month, year] = dateString.split('/');
+    return `${year}-${month}-${day}`;
+  };
+  
 
 const handleSubmit = (event) => {
   console.log("in handle submit");
@@ -500,7 +567,7 @@ const handleDelete = (id) => {
 
 const downloadTemplate = () => {
   const templateData = [
-      { date: '', orderNo: '',  portal: '', portalOrderNo: '', portalOrderLineId: '', portalSKU: '', sellerSKU: '', productDescription: '', qty: '', shipByDate: '', dispatched: '', courier: '', cancel: '' } // Add more fields if needed
+      { date: '', orderNo: '',  portal: '', portalOrderNo: '', portalOrderLineId: '', portalSKU: '', sellerSKU: '', productDescription: '', qty: '', shipByDate: '', dispatched: '', courier: '', cancel: '', awbNo } // Add more fields if needed
   ];
   const ws = XLSX.utils.json_to_sheet(templateData);
   const wb = XLSX.utils.book_new();
@@ -514,7 +581,7 @@ const downloadTemplate = () => {
       return buf;
   }
 
-  saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'Template.xlsx');
+  saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'OrderTemplate.xlsx');
 };
 
 const exportToExcel = () => {

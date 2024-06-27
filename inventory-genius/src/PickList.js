@@ -694,8 +694,8 @@ const handleDropdownChange = (event, orderNo) => {
         <td>{picklist.sellerSKU ? picklist.sellerSKU : ''}</td>
         <td>{picklist.qty}</td>
         <td>{picklist.pickQty}</td>
-        <td>{picklist.binNumber || "N/A"}</td>
-        <td>{picklist.rackNumber || "N/A"}</td>
+        <td>{picklist.binNumber ? picklist.binNumber : "N/A"}</td>
+        <td>{picklist.rackNumber ? picklist.rackNumber : "N/A"}</td>
       </tr>
     );
   })}

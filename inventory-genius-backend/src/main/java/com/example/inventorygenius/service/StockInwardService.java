@@ -58,19 +58,22 @@ public class StockInwardService {
                 .orElseThrow(() -> new NoSuchElementException("Stock Inward not found with id: " + id));
     }
 
+    @Transactional
     public void deleteStockInwardById(Long id) {
         StockInward SI = findById(id);
         if (SI == null) {
             throw new IllegalArgumentException("StockInward with id " + id + " not found.");
         }
-
+    
+        System.out.println("Found StockInward: " + SI);
+    
         // Check if SKU code is present in any storage
         for (Storage storage : storageService.getAllStorage()) {
             if (storage.getSkucode().equals(SI.getItem().getSKUCode())) {
                 throw new IllegalStateException("Cannot delete StockInward because the SKU code is present in Storage.");
             }
         }
-
+    
         // Create a new Stock object
         Stock stock = new Stock();
         stock.setDate(LocalDate.now());
@@ -81,9 +84,11 @@ public class StockInwardService {
         stock.setSource("stock inward");
         stock.setMessage("stock inward deleted");
         stock.setNumber("id = " + id);
-
+    
+        System.out.println("Creating new Stock entry: " + stock);
+    
         stockService.addStock(stock);
-
+    
         String skuCode = SI.getItem().getSKUCode();
         StockCount stockCount = stockCountService.getStockCountBySKUCode(skuCode);
         if (stockCount != null) {
@@ -94,8 +99,9 @@ public class StockInwardService {
         } else {
             throw new IllegalStateException("Stock count for SKU code " + skuCode + " not found.");
         }
-
+    
         stockInwardRepository.deleteById(id);
+        stockInwardRepository.flush(); 
         System.out.println("StockInward with id " + id + " deleted successfully.");
     }
 

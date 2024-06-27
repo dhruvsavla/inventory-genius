@@ -14,9 +14,12 @@ import com.example.inventorygenius.service.StockCountService;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class StockService {
@@ -26,6 +29,9 @@ public class StockService {
 
     @Autowired
     private StockCountService stockCountService;
+
+    @Autowired
+    private ItemSupplierService itemSupplierService;
 
     // Method to add a new item
     public Stock addStock(Stock stock) {
@@ -75,6 +81,48 @@ public class StockService {
 
     public Stock findBySkucode(String skucode) {
         return stockRepository.findBySkucode(skucode);
+    }
+
+    public Map<String, List<Stock>> groupStocksBySkucode(List<Stock> stocks) {
+        return stocks.stream().collect(Collectors.groupingBy(Stock::getSkucode));
+    }
+
+    // Method to print grouped stocks and calculate counts
+    public Map<String, Double> printGroupedStocksAndCalculateCounts() {
+        Map<String, List<Stock>> groupedStocks = groupStocksBySkucode(getAllStock());
+        Map<String, Double> skucodeCounts = new HashMap<>();
+
+        groupedStocks.forEach((skucode, stockList) -> {
+            double countChange = 0.0;
+
+            for (Stock stock : stockList) {
+                if (Double.parseDouble(stock.getAddQty()) > 0) {
+                    countChange += Double.parseDouble(stock.getAddQty());
+                } else if (Double.parseDouble(stock.getSubQty()) > 0) {
+                    countChange -= Double.parseDouble(stock.getSubQty());
+                }
+            }
+
+            skucodeCounts.put(skucode, skucodeCounts.getOrDefault(skucode, 0.0) + countChange);
+
+            // Print the skucode and its stocks
+            System.out.println("Skucode: " + skucode);
+            stockList.forEach(s -> System.out.println("    " + s));
+        });
+
+        // Update StockCount based on skucodeCounts
+        skucodeCounts.forEach((skucode, countChange) -> {
+            StockCount stockCount = stockCountService.getStockCountBySKUCode(skucode);
+            if (stockCount != null) {
+                stockCount.setCount(countChange);
+                stockCountService.updateStockCount(stockCount);
+            } else {
+                // Handle case where StockCount does not exist for the skucode
+                System.out.println("StockCount not found for skucode: " + skucode);
+            }
+        });
+
+        return skucodeCounts;
     }
 
 }

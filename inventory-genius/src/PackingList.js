@@ -166,75 +166,75 @@ const PicklistComponent = () => {
       });
   };
   
-  const generatePicklistWithNumber = (packingListNumber) => {
+  const generatePicklistWithNumber = async (packingListNumber) => {
     // Filter the entire order objects instead of just the items
     const selectedOrders = orders.filter(order => selectedRows.includes(order.orderNo));
-  
+    
     console.log("selected rows = " + selectedRows);
     console.log("selected order data = " + JSON.stringify(selectedOrderData));
   
-    // Map the selected order data to the desired format
-const selectedOrder = selectedOrderData[0].map(order => ({
-  packListNumber: packingListNumber,
-  date: new Date(),
-  portalOrderNo: order.portalOrderNo,
-  orderNo: order.orderNo,
-  bomCode: order.bomCode,
-  portal: order.portal,
-  sellerSKU: order.sellerSKU,
-  qty: order.qty,
-  description: order.description,
-  packQty: order.pickQty
-}));
-
-// Loop through each selected order and post it individually
-selectedOrder.forEach(order => {
-  axios.post('http://localhost:8080/packinglistdata', order)
-    .then(response => {
-      console.log("after post" + JSON.stringify(response.data));
-
-      setSelectedOrderData([]);
-      setSelectedRows([]);
-
-      axios.get('http://localhost:8080/packinglist/not/generated/packinglist/orders')
-      .then(response => {
-        setOrders(response.data);
-      })
-      .catch(error => {
-        console.log("error getting orders: " + error);
-      })
-
-      axios.get('http://localhost:8080/packinglist/getData')
-      .then(response => {
-        const mergedPicklistData = mergeRowsWithSamePicklist(response.data);
-        setPicklistData(response.data);
-        console.log("picklistData = " + JSON.stringify(picklistData));
-      })
-      .catch(error => {
-        console.error(error);
-      });
-    })
-    .catch(error => {
-      console.error('Error generating picklist data:', error);
-    });
-});
-
-    // Assuming your API endpoint for generating a picklist is '/generate-picklist'
-    axios.post('http://localhost:8080/packinglist', { packingListNumber, orders: selectedOrders })
-      .then(response => {
-        console.log('Picklist generated successfully:', response.data);
-        toast.success('PickList generated successfully', {
-          autoClose: 2000 // Close after 2 seconds
-        });
-        // Optionally, you can update state or perform other actions here
-      })
-      .catch(error => {
-        console.error('Error generating picklist:', error);
-        toast.error('Failed to generate PickList: ' + error.message);
-      });
-
+    // Map the selected order data to the desired format and post each order
+    const selectedOrderPromises = selectedOrderData.flat().map(async (o) => {
+      const selectedOrder = {
+        packListNumber: packingListNumber,
+        date: new Date(),
+        portalOrderNo: o.portalOrderNo,
+        orderNo: o.orderNo,
+        bomCode: o.bomCode,
+        portal: o.portal,
+        sellerSKU: o.sellerSKU,
+        qty: o.qty,
+        description: o.description,
+        packQty: o.pickQty
+      };
       
+      try {
+        console.log("selected order = " + JSON.stringify(selectedOrder));
+        const response = await axios.post('http://localhost:8080/packinglistdata', selectedOrder);
+        console.log("after post: " + JSON.stringify(response.data));
+      } catch (error) {
+        console.error('Error posting order:', error);
+      }
+    });
+  
+    // Await all promises to complete before proceeding
+    await Promise.all(selectedOrderPromises);
+  
+    // Clear selected data and rows
+    setSelectedOrderData([]);
+    setSelectedRows([]);
+  
+    // Refresh orders and picklist data
+    try {
+      const ordersResponse = await axios.get('http://localhost:8080/packinglist/not/generated/packinglist/orders');
+      setOrders(ordersResponse.data);
+    } catch (error) {
+      console.log("error getting orders: " + error);
+    }
+  
+    try {
+      const picklistResponse = await axios.get('http://localhost:8080/packinglist/getData');
+      const mergedPicklistData = mergeRowsWithSamePicklist(picklistResponse.data);
+      setPicklistData(mergedPicklistData);
+      console.log("picklistData = " + JSON.stringify(picklistData));
+    } catch (error) {
+      console.error(error);
+    }
+  
+    // Generate picklist
+    try {
+      const response = await axios.post('http://localhost:8080/packinglist', { packingListNumber, orders: selectedOrders });
+      console.log('Picklist generated successfully:', response.data);
+      toast.success('PickList generated successfully', {
+        autoClose: 2000 // Close after 2 seconds
+      });
+    } catch (error) {
+      console.error('Error generating picklist:', error);
+      toast.error('Failed to generate PickList: ' + error.message);
+    }
   };
+  
+  
   
 
 
@@ -342,17 +342,6 @@ const handleDelete = (packingListNumber) => {
 };
 
 
-// const handleRowClick = (event, order) => {
-//   const isChecked = selectedRows.includes(order.orderNo);
-//   const updatedSelectedRows = isChecked
-//     ? selectedRows.filter(id => id !== order.orderNo)
-//     : [...selectedRows, order.orderNo];
-
-//   setSelectedRows(updatedSelectedRows);
-
-// };
-
-
 const handleDownload = async (pickListNumber) => {
   console.log("pickData = " + JSON.stringify(picklistData));
   try {
@@ -406,7 +395,7 @@ const indexOfLastItem = currentPage * itemsPerPage;
 
 const handleDownload1 = async (pickListNumber) => {
   try {
-      const picklistItems = picklistData.filter(picklist => picklist.pickListNumber === pickListNumber);
+      const picklistItems = picklistData.filter(picklist => picklist.packListNumber === pickListNumber);
       
       if (picklistItems.length === 0) {
           console.error(`Picklist with pickListNumber ${pickListNumber} not found.`);
@@ -446,13 +435,15 @@ const handleDownload1 = async (pickListNumber) => {
           { title: "Pack Qty", dataKey: "pickQty" },
       ];
 
+      console.log("picklistItems = " + JSON.stringify(picklistItems));
+
       // Define table rows with merged data
       const rows = picklistItems.map(item => ({
           date: formatDate(item.date),
           portal: item.portal,
-          portalOrderNo: item.portalOrderNo,
+          portalOrderNo: item.order.portalOrderNo,
           qty: item.qty,
-          pickQty: item.pickQty,
+          pickQty: item.packQty,
       }));
 
       // Add table to PDF
@@ -671,7 +662,7 @@ const formatDate = (dateString) => {
     {picklistData.map((picklist, index) => {
       const rowspan = picklistData.filter(p => p.packListNumber === picklist.packListNumber).length;
       return (
-        <tr key={`${picklist.pickListId}-${index}`}>
+        <tr key={`${picklist.packListId}-${index}`}>
           {index === 0 || picklist.packListNumber !== picklistData[index - 1].packListNumber ? (
             <>
               <td rowSpan={rowspan} style={{ width: '50px', textAlign: 'center' }}>

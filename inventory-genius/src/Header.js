@@ -50,6 +50,8 @@ function Header() {
                     Scan Dispatched Orders
                     </NavDropdown.Item>
                 </NavDropdown>
+                <Nav.Link href="/stockCount">Stock Count</Nav.Link>
+
 
             </Nav>
             {/* <Form className="d-flex">

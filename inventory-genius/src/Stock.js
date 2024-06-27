@@ -359,6 +359,16 @@ const exportToExcel = () => {
   saveAs(new Blob([s2ab(wbout)], { type: 'application/octet-stream' }), 'StockData.xlsx');
 };
 
+const updateCount = () => {
+  axios.get('http://localhost:8080/stock/update-counts')
+    .then(reponse => {
+      console.log("stock count updated successfully");
+    })
+    .catch(error => {
+      console.log(error);
+    })
+}
+
     return (
         <div>
             <ToastContainer position="top-right" />
@@ -375,6 +385,7 @@ const exportToExcel = () => {
           <h4>Stock Form</h4>
         </AccordionSummary>
         <AccordionDetails>
+          <Button style = {{float: "right"}} onClick={updateCount}>Update Count</Button>
     <Form noValidate validated={validated} onSubmit={handleSubmit}>
       <Row className="mb-3">
         <Form.Group as={Col} md="4" controlId="validationCustom01">

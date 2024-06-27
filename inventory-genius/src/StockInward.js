@@ -105,7 +105,24 @@ function StockInward() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handleFileUpload = (e) => {
+  const postData = (data) => {
+    axios.post('http://localhost:8080/stockInward', data)
+        .then(response => {
+            // Handle successful response
+            console.log('Data posted successfully:', response);
+        })
+        .catch(error => {
+            // Handle error
+            console.error('Error posting data:', error);
+        });
+};
+
+const formatDateString = (dateString) => {
+    const [day, month, year] = dateString.split('/');
+    return `${year}-${month}-${day}`;
+};
+
+const handleFileUpload = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
 
@@ -116,11 +133,9 @@ function StockInward() {
         const sheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(sheet);
 
-        //jsonData.shift();
-
         jsonData.forEach(item => {
             const formattedData = {
-                date: item.date,
+                date: formatDateString(item.date),
                 qty: item.qty,
                 skucode: item.skucode
             };
@@ -129,18 +144,20 @@ function StockInward() {
             axios.get(`http://localhost:8080/item/supplier/search/skucode/${item.skucode}`)
                 .then(response => {
                     // Check if item exists
-                    if (response.data.length === 0) {
+                    if (!response.data || response.data.length === 0) {
                         console.error('Item not found with SKU code: ' + item.skucode);
                         return;
                     }
 
+                    console.log("found item with skucode: " + item.skucode);
+
                     // Extract item from response data
-                    const fetchedItem = response.data[0];
+                    const fetchedItem = response.data;
 
                     // Construct formData with fetched item
                     const formData = {
                         ...formattedData,
-                        item: fetchedItem // Wrap the single item in an array
+                        item: fetchedItem // Make sure fetchedItem is correctly assigned
                     };
 
                     console.log('Form data:', formData);
@@ -284,17 +301,6 @@ useEffect(() => {
     .catch(error => console.error(error));
 }, []);
 
-const postData = (data) => {
-    axios.post('http://localhost:8080/stock', data)
-        .then(response => {
-            // Handle successful response
-            console.log('Data posted successfully:', response);
-        })
-        .catch(error => {
-            // Handle error
-            console.error('Error posting data:', error);
-        });
-};
 
 const handleDelete = (id) => {
   console.log("Deleting row with id:", id);

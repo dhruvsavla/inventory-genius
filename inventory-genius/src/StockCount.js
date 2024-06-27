@@ -98,16 +98,26 @@ function StockCount() {
             </Row>
             <Row>
                 <Col md={6}>
-                    <Card>
-                        <Card.Header style={{ fontWeight: "bolder" }}>Stock Count List</Card.Header>
-                        <ListGroup variant="flush">
-                            {apiData.map(item => (
-                                <ListGroup.Item key={item.stockCountId}>
-                                    {item.item.skucode} ({item.item.description}) - {item.count}
-                                </ListGroup.Item>
-                            ))}
-                        </ListGroup>
-                    </Card>
+                <table className="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">SKU Code</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Seller SKU</th>
+                        <th scope="col">Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {apiData.map(item => (
+                        <tr key={item.stockCountId}>
+                            <td>{item.item.skucode}</td>
+                            <td>{item.item.description}</td>
+                            <td>{item.item.sellerSKUCode}</td>
+                            <td>{item.count}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
                 </Col>
                 <Col md={6}>
                     <Card style={{ height: '100%' }}>

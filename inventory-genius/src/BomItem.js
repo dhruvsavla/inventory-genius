@@ -141,8 +141,64 @@ function Bom() {
 };
 
 const handleFileUpload = (e) => {
-    
+  const file = e.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = (evt) => {
+    const data = evt.target.result;
+    const workbook = XLSX.read(data, { type: 'binary' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+    jsonData.forEach(item => {
+      const { bomCode, bomItem, qty } = item;
+      
+      axios.get(`http://localhost:8080/item/supplier/search/skucode/${bomItem}`)
+        .then(response => {
+          if (response.data.length === 0) {
+            toast.error('Item not found with SKU code: ' + bomItem);
+            return;
+          }
+
+          const fetchedItem = response.data;
+
+          axios.get(`http://localhost:8080/boms/bom/${bomCode}`)
+            .then((response) => {
+              const bom = response.data;
+              const bomId = bom.bomId;
+
+              const formData = {
+                bomItem,
+                qty,
+                bom,
+                item: fetchedItem
+              };
+
+              return axios.post(`http://localhost:8080/bomItems/create/${bomId}`, formData);
+            })
+            .then((response) => {
+              console.log('POST request successful:', response);
+              setApiData(prevApiData => [...prevApiData, response.data]);
+              toast.success('BOM Item added successfully', {
+                autoClose: 2000 // Close after 2 seconds
+              });
+            })
+            .catch((error) => {
+              console.error('Error in request:', error);
+              toast.error('Failed to add BOM Item: ' + (error.response?.data?.message || error.message));
+            });
+        })
+        .catch(error => {
+          console.error('Error fetching item:', error);
+          toast.error('Failed to fetch item: ' + (error.response?.data?.message || error.message));
+        });
+    });
+  };
+
+  reader.readAsBinaryString(file);
 };
+
   
 
 const handleSubmit = (event) => {

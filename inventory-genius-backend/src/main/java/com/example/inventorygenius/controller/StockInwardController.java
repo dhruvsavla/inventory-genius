@@ -95,11 +95,16 @@ public class StockInwardController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteStockInward(@PathVariable("id") Long stockInwardId) {
-        System.out.println("Deleting StockInward with id: " + stockInwardId);
+public void deleteStockInward(@PathVariable("id") Long stockInwardId) {
+    System.out.println("Deleting StockInward with id: " + stockInwardId);
+    try {
         stockInwardService.deleteStockInwardById(stockInwardId);
-        System.out.println("deleted");
+        System.out.println("Deleted StockInward with id: " + stockInwardId);
+    } catch (Exception e) {
+        System.err.println("Error deleting StockInward with id " + stockInwardId + ": " + e.getMessage());
+        e.printStackTrace();
     }
+}
 
     @PutMapping("/{id}")
     public ResponseEntity<StockInward> updateStockInward(@PathVariable Long id, @RequestBody StockInward stockInwardDetails) {

@@ -434,7 +434,8 @@ const handleRowSubmit = () => {
       sellerSKU,
       qty,
       cancel,
-      awbNo
+      awbNo,
+      orderStatus
     };
     console.log('form data: ', formData)
     console.log("id: ", selectedItem.orderId)
@@ -464,6 +465,7 @@ const handleRowSubmit = () => {
         setShipbyDate("");
         setCancel("");
         setAwbNo("");
+        setOrderStatus("");
       })
       .catch(error => {
         console.error('Error sending PUT request:', error);
@@ -828,10 +830,18 @@ const exportToExcel = () => {
           <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
         </Form.Group>
 
-        <Form.Group as={Col} md="4">
-        <Form.Label>Order Status</Form.Label>
-        <Form.Control placeholder={orderStatus} disabled />
-      </Form.Group>
+        <Form.Group as={Col} md="4" controlId="validationCustom01">
+          <Form.Label>Order Status</Form.Label>
+          <Form.Control
+            required
+            type="text"
+            placeholder="Order Status"
+                  defaultValue=""
+                  value={orderStatus}
+                onChange={(e) => setOrderStatus(e.target.value)}
+          />
+          <Form.Control.Feedback>Looks good!</Form.Control.Feedback>
+        </Form.Group>
 
     </Row>
                     

@@ -1,16 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BarcodeScanner from './BarcodeScanner.js';
 import QRScanner from './QRScanner.js';
-import axios from 'axios'; // Import Axios for making HTTP requests
+import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import successSound from './store-scanner-beep-90395.mp3'; // Import the sound file
+import successSound from './store-scanner-beep-90395.mp3';
+import "./Scan.css"; // Import your custom CSS file
 
 const DispatchScan = () => {
     const [barcode, setBarcode] = useState('');
     const [qrCode, setQRCode] = useState('');
+    const [orders, setOrders] = useState([]);
+    const [selectedOrders, setSelectedOrders] = useState([]);
 
-    const successAudio = new Audio(successSound); // Create a new Audio object
+    const successAudio = new Audio(successSound);
+
+    useEffect(() => {
+        fetchOrders();
+    }, []);
+
+    // Function to fetch orders from the backend
+    const fetchOrders = async () => {
+        try {
+            const response = await axios.get('http://localhost:8080/orders/notDispatched');
+            setOrders(response.data); // Assuming response.data is an array of orders
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+            toast.error('Failed to fetch orders');
+        }
+    };
 
     // Function to call the API with the scanned code
     const callApiWithCode = async (code) => {
@@ -19,44 +37,89 @@ const DispatchScan = () => {
             const response = await axios.put(`http://localhost:8080/orders/scan/dispatch?awb=${code}`);
             console.log('API Response:', response.data);
             toast.success('Scan successful, order status changed', {
-                autoClose: 2000 // Close after 2 seconds
-              });
-              successAudio.play();
-            // Handle the API response here
+                autoClose: 2000
+            });
+            successAudio.play();
+            fetchOrders(); // Refresh the list of orders after scanning
         } catch (error) {
             console.error('Error:', error);
-            toast.error('Scan failed' + error.message);
-
+            toast.error('Scan failed: ' + error.message);
         }
     };
 
     const handleBarCodeDetected = (code) => {
         console.log('Barcode detected:', code);
-        setBarcode(code); // Update barcode state
-        callApiWithCode(code); // Call the API with the barcode
+        setBarcode(code);
+        callApiWithCode(code);
     };
 
     const handleQRCodeDetected = (data) => {
         console.log('QR code detected:', data);
-        setQRCode(data); // Update QR code state
-        callApiWithCode(data); // Call the API with the QR code
+        setQRCode(data);
+        callApiWithCode(data);
+    };
+
+    // Toggle selection of an order
+    const toggleOrderSelection = (orderId) => {
+        const isSelected = selectedOrders.includes(orderId);
+        if (isSelected) {
+            setSelectedOrders(selectedOrders.filter(id => id !== orderId));
+        } else {
+            setSelectedOrders([...selectedOrders, orderId]);
+        }
+    };
+
+    // Save selected orders
+    const saveSelectedOrders = async () => {
+        try {
+            // Iterate through selectedOrders array
+            for (const orderId of selectedOrders) {
+                const order = orders.find(o => o.orderId === orderId); // Find the order details
+                const response = await axios.put(`http://localhost:8080/orders/dispatchByAwbNo?awbNo=${order.awbNo}`);
+                console.log(`Dispatched order with AWB No. ${order.awbNo}:`, response.data);
+            }
+    
+            toast.success('Selected orders dispatched successfully');
+            fetchOrders(); // Refresh the list of orders after saving
+        } catch (error) {
+            console.error('Error dispatching orders:', error);
+            toast.error('Failed to dispatch orders');
+        }
     };
 
     return (
-        <div>
+        <div className="dispatch-scan-container">
             <ToastContainer position="top-right" />
             <div className='title'>
                 <h1>Scan Dispatched Orders</h1>
             </div>
-            <div>
-                <h3>Barcode Scanner</h3>
-                <BarcodeScanner onDetected={handleBarCodeDetected} />
-                {barcode && <p>Detected Barcode: {barcode}</p>}
-            </div>
-            <div>
-                <h3>QR Code Scanner</h3>
-                <QRScanner style={{ width: "100px" }} onScan={handleQRCodeDetected} />
-                {qrCode && <p>Detected QR Code: {qrCode}</p>}
+            <div className="content-container">
+                <div className="scanners">
+                    <div className="scanner">
+                        <h3>Barcode Scanner</h3>
+                        <BarcodeScanner onDetected={handleBarCodeDetected} />
+                        {barcode && <p>Detected Barcode: {barcode}</p>}
+                    </div>
+                    <div className="scanner">
+                        <h3>QR Code Scanner</h3>
+                        <QRScanner style={{ width: "100px" }} onScan={handleQRCodeDetected} />
+                        {qrCode && <p>Detected QR Code: {qrCode}</p>}
+                    </div>
+                </div>
+                <div className="orders-list">
+                    <h3>Orders to Dispatch</h3>
+                    {orders.map(order => (
+                        <div key={order.orderId} className="order-item">
+                            <input
+                                type="checkbox"
+                                checked={selectedOrders.includes(order.orderId)}
+                                onChange={() => toggleOrderSelection(order.orderId)}
+                            />
+                            <label>{order.orderNo} ( {order.awbNo} )</label>
+                        </div>
+                    ))}
+                    <button onClick={saveSelectedOrders}>Dispatch Selected Orders</button>
+                </div>
             </div>
         </div>
     );

@@ -102,6 +102,18 @@
     
   }
 
+  @media (max-width: 768px) {
+    .buttons {
+      flex-direction: column; /* Stack buttons vertically on smaller screens */
+      align-items: stretch; /* Stretch buttons to full width */
+    }
+  
+    .buttons button {
+      margin: 5px 0; /* Adjust margin for vertical stacking */
+      width: 100%; /* Make buttons full width */
+    }
+  }
+
 
   /* Item.css */
 

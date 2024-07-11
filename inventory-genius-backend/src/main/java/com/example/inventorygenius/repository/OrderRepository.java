@@ -14,5 +14,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT DISTINCT o FROM Order o JOIN FETCH o.items")
     List<Order> findAllWithItems();
     List<Order> findByOrderNo(String orderNo);
-    
+    List<Order> findByAwbNo(String awbNo);
 }

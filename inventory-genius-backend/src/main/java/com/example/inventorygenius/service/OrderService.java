@@ -110,5 +110,31 @@ public class OrderService {
         return orderRepository.findByOrderNo(orderNo);
     }
 
+    public List<Order> findNotDispatchedOrders(){
+        List<Order> orders = getAllOrders();
+        List<Order> notDispatchedOrders = new ArrayList<>();
+
+        for (Order o : orders) {
+            if (!o.getOrderStatus().equals("dispatched")){
+                notDispatchedOrders.add(o);
+            }
+        }
+        return notDispatchedOrders;
+    }
     
+    public List<Order> findNotPackedOrders(){
+        List<Order> orders = getAllOrders();
+        List<Order> notPackedOrders = new ArrayList<>();
+
+        for (Order o : orders) {
+            if (!o.getOrderStatus().equals("dispatched") && !o.getOrderStatus().equals("packed")){
+                notPackedOrders.add(o);
+            }
+        }
+        return notPackedOrders;
+    }
+
+    public List<Order> findByAwbNo(String AwbNo){
+        return orderRepository.findByAwbNo(AwbNo);
+    }
 }

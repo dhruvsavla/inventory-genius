@@ -26,6 +26,7 @@ import java.util.Optional;
 
 
 
+
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
@@ -83,7 +84,7 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
         existingOrder.setCancel(updatedOrder.getCancel());
         existingOrder.setItems(updatedOrder.getItems());
         existingOrder.setAwbNo(updatedOrder.getAwbNo());
-
+        existingOrder.setOrderStatus(updatedOrder.getOrderStatus());
         System.out.println("Updated order: " + existingOrder);
 
         // Check if the order has been canceled
@@ -338,6 +339,48 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
         }
 
         return ResponseEntity.ok(updatedOrders);
+    }
+
+    @GetMapping("notDispatched")
+    public List<Order> getNotDispatchedOrders(){
+        return orderService.findNotDispatchedOrders();
+    }
+
+    @GetMapping("notPacked")
+    public List<Order> getNotPackedOrders() {
+        return orderService.findNotPackedOrders();
+    }
+    
+    @GetMapping("/findByAwbNo")
+    public List<Order> findByAwbNo(
+            @RequestParam String awbNo) {
+        return orderRepository.findByAwbNo(awbNo);
+    }
+
+    @PutMapping("/dispatchByAwbNo")
+    public String dispatchOrdersByAwbNo(@RequestParam String awbNo) {
+        List<Order> ordersToUpdate = orderRepository.findByAwbNo(awbNo);
+        
+        // Update status for each order
+        for (Order order : ordersToUpdate) {
+            order.setOrderStatus("dispatched");
+            orderRepository.save(order);
+        }
+
+        return "Orders with AWB No. " + awbNo + " dispatched successfully";
+    }
+
+    @PutMapping("/packByAwbNo")
+    public String packOrdersByAwbNo(@RequestParam String awbNo) {
+        List<Order> ordersToUpdate = orderRepository.findByAwbNo(awbNo);
+        
+        // Update status for each order
+        for (Order order : ordersToUpdate) {
+            order.setOrderStatus("packed");
+            orderRepository.save(order);
+        }
+
+        return "Orders with AWB No. " + awbNo + " packed successfully";
     }
 
 }

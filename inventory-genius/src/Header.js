@@ -14,8 +14,9 @@ function Header() {
       <div className='header'>
           <Navbar expand="lg" className="bg-body-tertiary">
               <Container fluid>
-                  <Link to ="/">
-                      <Navbar.Brand href="#">TechJyot</Navbar.Brand>
+                  <Link to ="/" className='tech'>
+                    <img src = "https://media.licdn.com/dms/image/D560BAQF6CchqkqZEEQ/company-logo_200_200/0/1704887637105/techjyot___india_logo?e=2147483647&v=beta&t=S1jLov5GABl39n8XPksGcm8GIQsmvMTLl84RwYZNL-8"></img>
+                      <Navbar.Brand href="/home" >TechJyot</Navbar.Brand>
                       </Link>
             <Navbar.Toggle aria-controls="navbarScroll" />
             <Navbar.Collapse id="navbarScroll">

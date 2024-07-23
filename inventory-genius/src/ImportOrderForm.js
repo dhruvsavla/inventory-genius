@@ -208,6 +208,46 @@ function ImportOrderForm() {
   
   console.log("filteredData:", filteredData);  
 
+  const excelDateToJSDate = (serial) => {
+    const utc_days = Math.floor(serial - 25569);
+    const utc_value = utc_days * 86400; // seconds in a day
+    const date_info = new Date(utc_value * 1000);
+  
+    const fractional_day = serial - Math.floor(serial) + 0.0000001;
+  
+    const total_seconds = Math.floor(86400 * fractional_day);
+  
+    const seconds = total_seconds % 60;
+  
+    total_seconds -= seconds;
+  
+    const hours = Math.floor(total_seconds / (60 * 60));
+    const minutes = Math.floor(total_seconds / 60) % 60;
+  
+    return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
+  };
+  
+  const formatDateString = (dateString) => {
+    if (typeof dateString === 'number') {
+      const date = excelDateToJSDate(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } else if (typeof dateString === 'string') {
+      const [day, month, year] = dateString.split('/');
+      return `${year}-${month}-${day}`;
+    } else if (dateString instanceof Date) {
+      const year = dateString.getFullYear();
+      const month = String(dateString.getMonth() + 1).padStart(2, '0');
+      const day = String(dateString.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } else {
+      console.error('Invalid date format:', dateString);
+      return null;
+    }
+  };
+  
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
@@ -309,25 +349,6 @@ function ImportOrderForm() {
     reader.readAsBinaryString(file);
   };
   
-  const formatDateString = (dateString) => {
-    if (typeof dateString === 'string') {
-      const [day, month, year] = dateString.split('/');
-      if (day && month && year) {
-        return `${year}-${month}-${day}`;
-      } else {
-        console.error('Invalid date format:', dateString);
-        return null;
-      }
-    } else if (dateString instanceof Date) {
-      const year = dateString.getFullYear();
-      const month = String(dateString.getMonth() + 1).padStart(2, '0');
-      const day = String(dateString.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    } else {
-      console.error('Invalid date format:', dateString);
-      return null;
-    }
-  };
   
   
   

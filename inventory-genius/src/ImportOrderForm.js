@@ -297,9 +297,20 @@ function ImportOrderForm() {
   };
   
   const formatDateString = (dateString) => {
-    const [day, month, year] = dateString.split('/');
-    return `${year}-${month}-${day}`;
+    if (typeof dateString === 'string') {
+      const [day, month, year] = dateString.split('/');
+      return `${year}-${month}-${day}`;
+    } else if (dateString instanceof Date) {
+      const year = dateString.getFullYear();
+      const month = String(dateString.getMonth() + 1).padStart(2, '0');
+      const day = String(dateString.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } else {
+      console.error('Invalid date format:', dateString);
+      return null;
+    }
   };
+  
   
 
 const handleSubmit = (event) => {

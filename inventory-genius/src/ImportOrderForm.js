@@ -220,14 +220,23 @@ function ImportOrderForm() {
       const jsonData = XLSX.utils.sheet_to_json(sheet);
   
       jsonData.forEach(item => {
+        console.log('Original Date:', item.date); // Debugging log
+        console.log('Original Ship By Date:', item.shipByDate); // Debugging log
+  
+        const formattedDate = formatDateString(item.date);
+        const formattedShipByDate = formatDateString(item.shipByDate);
+  
+        console.log('Formatted Date:', formattedDate); // Debugging log
+        console.log('Formatted Ship By Date:', formattedShipByDate); // Debugging log
+  
         const formattedData = {
-          date: formatDateString(item.date),
+          date: formattedDate,
           orderNo: item.orderNo,
           portalOrderNo: item.portalOrderNo,
           portalOrderLineId: item.portalOrderLineId,
           portalSKU: item.portalSKU,
           productDescription: item.productDescription,
-          shipByDate: formatDateString(item.shipByDate),
+          shipByDate: formattedShipByDate,
           dispatched: item.dispatched,
           courier: item.courier,
           portal: item.portal,
@@ -237,6 +246,8 @@ function ImportOrderForm() {
           awbNo: item.awbNo,
           orderStatus: item.orderStatus || "Order Received"
         };
+  
+        console.log('Formatted Data:', formattedData); // Debugging log
   
         // Fetch item based on supplier and supplier SKU code
         axios.get(`http://localhost:8080/item/supplier/order/search/${item.sellerSKU}/${item.productDescription}`)
@@ -261,6 +272,8 @@ function ImportOrderForm() {
                     items: itemsArray,
                     itemPortalMapping: ipm,
                   };
+  
+                  console.log('Form Data for POST:', formData); // Debugging log
   
                   // Send the POST request
                   axios.post('http://localhost:8080/orders', formData)
@@ -315,6 +328,7 @@ function ImportOrderForm() {
       return null;
     }
   };
+  
   
   
   

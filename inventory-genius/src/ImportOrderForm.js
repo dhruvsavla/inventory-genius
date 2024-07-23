@@ -219,10 +219,10 @@ function ImportOrderForm() {
   
     const seconds = total_seconds % 60;
   
-    total_seconds -= seconds;
+    const total_seconds_remaining = total_seconds - seconds;
   
-    const hours = Math.floor(total_seconds / (60 * 60));
-    const minutes = Math.floor(total_seconds / 60) % 60;
+    const hours = Math.floor(total_seconds_remaining / (60 * 60));
+    const minutes = Math.floor(total_seconds_remaining / 60) % 60;
   
     return new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate(), hours, minutes, seconds);
   };
@@ -348,6 +348,7 @@ function ImportOrderForm() {
   
     reader.readAsBinaryString(file);
   };
+  
   
   
   

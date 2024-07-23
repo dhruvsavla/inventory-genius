@@ -299,7 +299,12 @@ function ImportOrderForm() {
   const formatDateString = (dateString) => {
     if (typeof dateString === 'string') {
       const [day, month, year] = dateString.split('/');
-      return `${year}-${month}-${day}`;
+      if (day && month && year) {
+        return `${year}-${month}-${day}`;
+      } else {
+        console.error('Invalid date format:', dateString);
+        return null;
+      }
     } else if (dateString instanceof Date) {
       const year = dateString.getFullYear();
       const month = String(dateString.getMonth() + 1).padStart(2, '0');
@@ -310,6 +315,7 @@ function ImportOrderForm() {
       return null;
     }
   };
+  
   
   
 

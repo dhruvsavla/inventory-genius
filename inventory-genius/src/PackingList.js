@@ -393,69 +393,116 @@ const indexOfLastItem = currentPage * itemsPerPage;
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-const handleDownload1 = async (pickListNumber) => {
-  try {
-      const picklistItems = picklistData.filter(picklist => picklist.packListNumber === pickListNumber);
-      
-      if (picklistItems.length === 0) {
-          console.error(`Picklist with pickListNumber ${pickListNumber} not found.`);
-          return;
-      }
+  const handleDownload1 = async (packListNumber) => {
+    try {
+        console.log("Filtering with packListNumber:", packListNumber);
+        console.log("Picklist Data:", picklistData);
 
-      // Create a new PDF instance
-      const pdf = new jsPDF();
+        // Ensure packListNumber is a number
+        const packListNumberInt = Number(packListNumber);
 
-      // Add a company logo (example logo URL)
-      const logoURL = 'https://media.licdn.com/dms/image/D560BAQF6CchqkqZEEQ/company-logo_200_200/0/1704887637105/techjyot___india_logo?e=2147483647&v=beta&t=S1jLov5GABl39n8XPksGcm8GIQsmvMTLl84RwYZNL-8'; // Replace with your actual base64 or URL
-      pdf.addImage(logoURL, 'PNG', 10, 10, 30, 15); // Adjust the position and size as needed
+        // Filter data
+        const picklistItems = picklistData.filter(picklist => picklist.packListNumber === packListNumberInt);
+        console.log("Filtered picklistItems:", picklistItems);
 
-      // Add heading
-      pdf.setFontSize(18);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Packinglist', pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+        if (picklistItems.length === 0) {
+            console.error(`Picklist with packListNumber ${packListNumber} not found.`);
+            return;
+        }
 
-      // Add current date
-      const currentDate = new Date();
-      const formattedDate = `${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(formattedDate, pdf.internal.pageSize.getWidth() - 50, 20);
+        // Sort the items by orderNo
+        picklistItems.sort((a, b) => a.order.orderNo.localeCompare(b.order.orderNo));
 
-      // Add PackingList Number
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`PackingList Number: ${pickListNumber}`, 15, 35);
+        // Create a new PDF instance
+        const pdf = new jsPDF();
 
-      // Define table columns
-      const columns = [
-          {title: "Date", dataKey: "date"},
-          { title: "Portal", dataKey: "portal" },
-          { title: "Portal Order No", dataKey: "portalOrderNo" },
-          { title: "Order Qty", dataKey: "qty" },
-          { title: "Pack Qty", dataKey: "pickQty" },
-      ];
+        // Add a company logo
+        const logoURL = 'https://media.licdn.com/dms/image/D560BAQF6CchqkqZEEQ/company-logo_200_200/0/1704887637105/techjyot___india_logo?e=2147483647&v=beta&t=S1jLov5GABl39n8XPksGcm8GIQsmvMTLl84RwYZNL-8';
+        pdf.addImage(logoURL, 'PNG', 10, 10, 30, 15);
 
-      console.log("picklistItems = " + JSON.stringify(picklistItems));
+        // Add heading
+        pdf.setFontSize(18);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Packinglist', pdf.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
 
-      // Define table rows with merged data
-      const rows = picklistItems.map(item => ({
-          date: formatDate(item.date),
-          portal: item.portal,
-          portalOrderNo: item.order.portalOrderNo,
-          qty: item.qty,
-          pickQty: item.packQty,
-      }));
+        // Add current date
+        const currentDate = new Date();
+        const formattedDate = `${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(formattedDate, pdf.internal.pageSize.getWidth() - 50, 20);
 
-      // Add table to PDF
-      pdf.autoTable({ columns, body: rows, startY: 40 }); // Start table after the header
+        // Add PackingList Number
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`PackingList Number: ${packListNumber}`, 15, 35);
 
-      // Save the PDF with a specified name
-      pdf.save(`packlist_${pickListNumber}.pdf`);
-      
-  } catch (error) {
-      console.error("Error generating PDF:", error);
-  }
+        // Define table columns with wider widths
+        const columns = [
+            { title: "Date", dataKey: "date", width: 30 },
+            { title: "Order No", dataKey: "orderNo", width: 40 },
+            { title: "Portal", dataKey: "portal", width: 30 },
+            { title: "Portal Order No", dataKey: "portalOrderNo", width: 40 },
+            { title: "Order Qty", dataKey: "qty", width: 30 },
+            { title: "Pack Qty", dataKey: "pickQty", width: 30 }
+        ];
+
+        // Prepare rows with manual grouping
+        const rows = [];
+        let currentOrderNo = null;
+
+        picklistItems.forEach(item => {
+            if (item.order.orderNo !== currentOrderNo) {
+                // Add group header
+                rows.push({ orderNo: `Order No: ${item.order.orderNo}`, date: '', orderNo: '', portal: '', portalOrderNo: '', qty: '', pickQty: '', isGroupHeader: true });
+                currentOrderNo = item.order.orderNo;
+            }
+            // Add item row
+            rows.push({
+                date: formatDate(item.date),
+                orderNo: item.order.orderNo,
+                portal: item.portal,
+                portalOrderNo: item.order.portalOrderNo,
+                qty: item.qty,
+                pickQty: item.packQty,
+                isGroupHeader: false
+            });
+        });
+
+        // Add table to PDF
+        pdf.autoTable({
+            columns,
+            body: rows,
+            startY: 40,
+            columnStyles: {
+                orderNo: { cellWidth: 40 },
+                date: { cellWidth: 30 },
+                portal: { cellWidth: 30 },
+                portalOrderNo: { cellWidth: 40 },
+                qty: { cellWidth: 30 },
+                pickQty: { cellWidth: 30 }
+            },
+            didDrawCell: (data) => {
+                if (data.row.raw.isGroupHeader) {
+                    pdf.setFontSize(14);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFillColor(220, 220, 220); // Light grey background for group header
+                    pdf.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F'); // Draw background
+                    pdf.text(data.cell.text, data.cell.x + 2, data.cell.y + 10); // Add text
+                }
+            },
+            margin: { left: 10, right: 10 }
+        });
+
+        // Save the PDF with a specified name
+        pdf.save(`packlist_${packListNumber}.pdf`);
+
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+    }
 };
+
+  
 
 
 
@@ -506,6 +553,18 @@ const formatDate = (dateString) => {
   const year = date.getFullYear();
   return `${day}-${month}-${year}`;
 };
+
+const groupedData = picklistData.reduce((acc, picklist) => {
+  const { packListNumber, orderNo } = picklist;
+  if (!acc[packListNumber]) {
+      acc[packListNumber] = {};
+  }
+  if (!acc[packListNumber][orderNo]) {
+      acc[packListNumber][orderNo] = [];
+  }
+  acc[packListNumber][orderNo].push(picklist);
+  return acc;
+}, {});
 
   return (
     <div>
@@ -576,6 +635,7 @@ const formatDate = (dateString) => {
     <thead>
       <tr>
         <th>Date</th>
+        <th>Order No</th>
         <th>Portal</th>
         <th>Order Qty</th>
         <th>Description</th>
@@ -595,6 +655,7 @@ const formatDate = (dateString) => {
                   return `${day}-${month}-${year}`;
                 })()}
               </td>
+              <td>{order.orderNo}</td>
               <td>{order.portal}</td>
               <td>{order.qty}</td>
               <td>{order.description}</td>
@@ -628,82 +689,89 @@ const formatDate = (dateString) => {
         <AccordionDetails>
 
         <Table striped bordered hover>
-  <thead>
-    <tr>
-      <th></th>
-      <th></th>
-      <th>
-      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('pickListNumber')}>
-                  </SwapVertIcon>
-        Pack List Number</th>
-      <th>
-      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('date')}>
-                  </SwapVertIcon>
-        Date</th>
-      <th>
-      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portalOrderNo')}>
-                  </SwapVertIcon>
-        Portal Order No</th>
-      <th>
-      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('portal')}>
-                  </SwapVertIcon>
-        Portal</th>
-      <th>
-      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('qty')}>
-                  </SwapVertIcon>
-        Order Qty</th>
-      <th>
-      <SwapVertIcon style = {{cursor: 'pointer', marginRight: "2%"}}variant="link" onClick={() => requestSort('pickQty')}>
-                  </SwapVertIcon>
-        Pack Qty</th>
-    </tr>
-  </thead>
-  <tbody>
-    {picklistData.map((picklist, index) => {
-      const rowspan = picklistData.filter(p => p.packListNumber === picklist.packListNumber).length;
-      return (
-        <tr key={`${picklist.packListId}-${index}`}>
-          {index === 0 || picklist.packListNumber !== picklistData[index - 1].packListNumber ? (
-            <>
-              <td rowSpan={rowspan} style={{ width: '50px', textAlign: 'center' }}>
-                <button
-                  style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
-                  className="delete-icon"
-                  onClick={(e) => {
-                    e.stopPropagation(); 
-                    handleDelete(picklist.packListNumber); 
-                  }}
-                >
-                  <DeleteIcon style={{ color: '#F00' }} />
-                </button>
-              </td>
-              {index === 0 || picklist.packListNumber !== picklistData[index - 1].packListNumber ? (
-            <td rowSpan={rowspan}>
-              <button onClick={() => handleDownload1(picklist.packListNumber)}>Download</button>
-            </td>
-          ) : null}
-              <td rowSpan={rowspan}>{picklist.packListNumber}</td>
-            </>
-          ) : null}
-          
-          <td>
-            {(() => {
-              const date = new Date(picklist.date);
-              const day = String(date.getDate()).padStart(2, '0');
-              const month = String(date.getMonth() + 1).padStart(2, '0');
-              const year = date.getFullYear();
-              return `${day}-${month}-${year}`;
-            })()}
-          </td>
-          <td>{picklist.order.portalOrderNo}</td>
-          <td>{picklist.order.itemPortalMapping.portal}</td>
-          <td>{picklist.qty}</td>
-          <td>{picklist.packQty}</td>
-        </tr>
-      );
-    })}
-  </tbody>
-</Table>
+        <thead>
+            <tr>
+                <th></th>
+                <th></th>
+                <th>
+                    <SwapVertIcon style={{ cursor: 'pointer', marginRight: "2%" }} onClick={() => requestSort('packListNumber')} />
+                    Pack List Number
+                </th>
+                <th>
+                    <SwapVertIcon style={{ cursor: 'pointer', marginRight: "2%" }} onClick={() => requestSort('date')} />
+                    Date
+                </th>
+                <th>
+                    <SwapVertIcon style={{ cursor: 'pointer', marginRight: "2%" }} onClick={() => requestSort('orderNo')} />
+                    Order No
+                </th>
+                <th>
+                    <SwapVertIcon style={{ cursor: 'pointer', marginRight: "2%" }} onClick={() => requestSort('portalOrderNo')} />
+                    Portal Order No
+                </th>
+                <th>
+                    <SwapVertIcon style={{ cursor: 'pointer', marginRight: "2%" }} onClick={() => requestSort('portal')} />
+                    Portal
+                </th>
+                <th>
+                    <SwapVertIcon style={{ cursor: 'pointer', marginRight: "2%" }} onClick={() => requestSort('qty')} />
+                    Order Qty
+                </th>
+                <th>
+                    <SwapVertIcon style={{ cursor: 'pointer', marginRight: "2%" }} onClick={() => requestSort('pickQty')} />
+                    Pack Qty
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {Object.entries(groupedData).map(([packListNumber, orders]) => (
+                Object.entries(orders).map(([orderNo, picklists], index) => {
+                    const packListRowspan = Object.values(orders).reduce((total, order) => total + order.length, 0);
+                    const orderRowspan = picklists.length;
+                    return picklists.map((picklist, picklistIndex) => (
+                        <tr key={`${picklist.packListId}-${picklistIndex}`}>
+                            {index === 0 && picklistIndex === 0 && (
+                                <>
+                                    <td rowSpan={packListRowspan} style={{ width: '50px', textAlign: 'center' }}>
+                                        <button
+                                            style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', padding: '0', border: 'none', background: 'none' }}
+                                            className="delete-icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(packListNumber);
+                                            }}
+                                        >
+                                            <DeleteIcon style={{ color: '#F00' }} />
+                                        </button>
+                                    </td>
+                                    <td rowSpan={packListRowspan}>
+                                        <button onClick={() => handleDownload1(packListNumber)}>Download</button>
+                                    </td>
+                                    <td rowSpan={packListRowspan}>{packListNumber}</td>
+                                </>
+                            )}
+                            {picklistIndex === 0 && (
+                                <td rowSpan={orderRowspan}>
+                                    {(() => {
+                                        const date = new Date(picklist.date);
+                                        const day = String(date.getDate()).padStart(2, '0');
+                                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                                        const year = date.getFullYear();
+                                        return `${day}-${month}-${year}`;
+                                    })()}
+                                </td>
+                            )}
+                            <td>{picklist.order.orderNo}</td>
+                            <td>{picklist.order.portalOrderNo}</td>
+                            <td>{picklist.order.itemPortalMapping.portal}</td>
+                            <td>{picklist.qty}</td>
+                            <td>{picklist.packQty}</td>
+                        </tr>
+                    ));
+                })
+            ))}
+        </tbody>
+    </Table>
 
 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             {rowsPerPageDropdown}

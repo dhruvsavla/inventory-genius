@@ -358,8 +358,8 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
     }
 
     @PutMapping("/dispatchByAwbNo")
-    public String dispatchOrdersByAwbNo(@RequestParam String awbNo) {
-        List<Order> ordersToUpdate = orderRepository.findByAwbNo(awbNo);
+    public String dispatchOrdersByAwbNo(@RequestParam String orderNo) {
+        List<Order> ordersToUpdate = orderRepository.findByOrderNo(orderNo);
         
         // Update status for each order
         for (Order order : ordersToUpdate) {
@@ -367,12 +367,12 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
             orderRepository.save(order);
         }
 
-        return "Orders with AWB No. " + awbNo + " dispatched successfully";
+        return "Orders with Order No. " + orderNo + " dispatched successfully";
     }
 
     @PutMapping("/packByAwbNo")
-    public String packOrdersByAwbNo(@RequestParam String awbNo) {
-        List<Order> ordersToUpdate = orderRepository.findByAwbNo(awbNo);
+    public String packOrdersByAwbNo(@RequestParam String orderNo) {
+        List<Order> ordersToUpdate = orderRepository.findByOrderNo(orderNo);
         
         // Update status for each order
         for (Order order : ordersToUpdate) {
@@ -380,7 +380,7 @@ public ResponseEntity<Order> updateOrder(@PathVariable Long orderId, @RequestBod
             orderRepository.save(order);
         }
 
-        return "Orders with AWB No. " + awbNo + " packed successfully";
+        return "Orders with Order No. " + orderNo + " packed successfully";
     }
 
 }

@@ -174,7 +174,30 @@
   }
 
 
-  
+  .orders-list {
+    margin: 20px;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.orders-table th,
+.orders-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+
+.orders-table th {
+    background-color: #f4f4f4;
+}
+
+.orders-table td input[type="checkbox"] {
+    margin: 0;
+}
+
   
   
   

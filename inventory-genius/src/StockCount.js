@@ -22,7 +22,7 @@ function StockCount() {
         // Fetch data from the API
         const fetchData = async () => {
             try {
-                const response = await axios.get('http://localhost:8080/api/endpoint');
+                const response = await axios.get('http://localhost:8080/stock-counts/all');
                 setApiData(response.data); // Assuming response.data is an array of items
             } catch (error) {
                 console.error('Error fetching data:', error);
